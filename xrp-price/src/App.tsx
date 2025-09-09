@@ -1,8 +1,20 @@
  // App.tsx
 import { useEffect, useState } from "react";
 import XrpPrice from "./XrpPrice";
+import WallpaperPicker from "./WallpaperPicker";
+import type { CSSProperties } from "react";
 // If you already built XrpPrice, import it. Otherwise keep the stub below.
 // import XrpPrice from "./XrpPrice";
+
+import wp1 from "./assets/wallpapers/wp1.jpg";
+import wp2 from "./assets/wallpapers/wp2.jpg";
+import wp3 from "./assets/wallpapers/wp3.jpg";
+
+const WALLPAPERS: string[] = [wp1, wp2, wp3]; 
+
+const WALLPAPER_KEY = "wallpaper_v1";
+
+
 
 type PageKey = "home" | "xrp" | "news" | "watchlist" | "settings";
 const LAST_PAGE_KEY = "last_page_v1";
@@ -32,6 +44,31 @@ const TILES: Tile[] = [
 export default function App() {
   const [page, setPage] = useState<PageKey>("home");
 
+  // persisted wallpaper (string | null) – can be URL, data: URI, or import
+  const [wallpaper, setWallpaper] = useState<string | null>(
+    () => localStorage.getItem(WALLPAPER_KEY)
+  );
+  useEffect(() => {
+    if (wallpaper) localStorage.setItem(WALLPAPER_KEY, wallpaper);
+    else localStorage.removeItem(WALLPAPER_KEY);
+  }, [wallpaper]);
+
+
+    const wallpaperBg: CSSProperties = wallpaper
+  ? {
+      backgroundImage: `linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,.55)), url(${wallpaper})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      backgroundAttachment: "fixed",
+    }
+  : {
+      background:
+        "radial-gradient(1200px 600px at 50% 10%, #1a1a1a 0%, #0b0b0b 70%)",
+    };
+
+
+
   // Load last page on first mount
   useEffect(() => {
     const last = localStorage.getItem(LAST_PAGE_KEY) as PageKey | null;
@@ -54,7 +91,8 @@ export default function App() {
         inset: 0,
         display: "grid",
         placeItems: "center",
-        background: "radial-gradient(1200px 600px at 50% 10%, #1a1a1a 0%, #0b0b0b 70%)",
+        ...wallpaperBg,
+        //background: "radial-gradient(1200px 600px at 50% 10%, #1a1a1a 0%, #0b0b0b 70%)",
         color: ui.text,
         fontFamily: "system-ui, Arial",
         lineHeight: 1.5,
@@ -174,8 +212,13 @@ function DetailPage({ page, onBack }: { page: PageKey; onBack: () => void }) {
         <XrpPrice onBack={onBack}/>
       )}
 
-      {page === "news" && (
-        <Placeholder>News page content goes here.</Placeholder>
+    {page === "news" && (
+      //<WallpaperPicker
+        //current={wallpaper}
+        //onChange={setWallpaper}
+        //presets={WALLPAPERS}
+      ///>
+        <Placeholder>Watchlist page content goes here.</Placeholder>
       )}
       {page === "watchlist" && (
         <Placeholder>Watchlist page content goes here.</Placeholder>
