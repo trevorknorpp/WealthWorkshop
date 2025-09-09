@@ -17,8 +17,10 @@ export default function XrpPrice() {
 
   // Dev mode + provider choice (persisted)
   const [devMode, setDevMode] = useState<boolean>(() => localStorage.getItem("xrp_dev_mode") === "1");
+  const [settingsMode, setSettingsMode] = useState<boolean>(() => localStorage.getItem("xrp_settings_mode") == "1");
   const [provider, setProvider] = useState<StreamProvider>(() => (localStorage.getItem("xrp_provider") as StreamProvider) || "binance");
   useEffect(() => localStorage.setItem("xrp_dev_mode", devMode ? "1" : "0"), [devMode]);
+  useEffect(() => localStorage.setItem("xrp_settings_mode", settingsMode ? "1" : "0"), [settingsMode]);
   useEffect(() => localStorage.setItem("xrp_provider", provider), [provider]);
 
   // decimals and fallback poll interval (persisted)
@@ -216,158 +218,198 @@ export default function XrpPrice() {
   }
 
   return (
-  // Viewport wrapper — centers the card both directions
-  <div
-    style={{
-      position: "fixed",
-      inset: 0,                     // top:0 right:0 bottom:0 left:0
-      display: "grid",
-      placeItems: "center",
-      background: "#000000ff",           // page bg
-      zIndex: 0,                    // stay behind any dev overlays
-    }}
-  >
-    {/* Card/container — finite width so it's truly centered */}
+    // Viewport wrapper — centers the card both directions
     <div
       style={{
-      width: "min(900px, 96vw)",                // responsive card width
-      padding: "clamp(16px, 3vw, 32px)",        // fluid padding
-      borderRadius: 16,
-      lineHeight: 1.5,
-      fontFamily: "system-ui, Arial",
-      color: "#eee",
-      textAlign: "center",
-      boxSizing: "border-box",
-    }}
+        position: "fixed",            //stays locked when scrolling
+        inset: 0,                     // shorthand for "top:0 right:0 bottom:0 left:0"
+        display: "grid",              // CSS grud box
+        placeItems: "center",         // align and justify items to center
+        background: "#000000ff",    // black background on the whole page
+        zIndex: 0,                    // bottom of stacking order
+      }}
     >
-      {/* Header with Dev toggle & provider — CENTERED, no space-between */}
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
-        <h1 style={{ margin: 0, fontSize: "clamp(22px, 4.2vw, 48px)" }}>XRP Price</h1>
-        {devMode && (
-          <select
-            value={provider}
-            onChange={(e) => setProvider(e.target.value as StreamProvider)}
-            style={{ padding: "6px 10px", borderRadius: 8, fontSize: "clamp(12px, 2.2vw, 14px)" }}
-          >
-            <option value="binance">Binance WS</option>
-            <option value="kraken">Kraken WS</option>
-          </select>
-        )}
-      </div>
-
-
-      {/* Price readout */}
-      <div style={{ marginTop: 20, fontSize: "clamp(24px, 5vw, 44px)" }}>
-        <p style={{ fontSize: "clamp(28px, 6.5vw, 64px)", fontWeight: 800, margin: 0 }}>{formatPrice(price)}</p>
-        <p style={{ margin: 0, fontSize: "clamp(12px, 2vw, 14px)", opacity: 0.7 }}>
-          {updatedAt ? `Last updated ${timeAgo(updatedAt, nowTs)}` : ""}
-        </p>
-      </div>
-      
-      {/*Chart*/}
-      <HistoryChart decimals={decimals} />
-      
-      {/* Dev mode toggle*/}
-      <div style={{ marginTop: 24, textAlign: "center" }}>
-        <label style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, cursor: "pointer" }}>
-          <input type="checkbox" checked={devMode} onChange={(e) => setDevMode(e.target.checked)} />
-          <span style={{ fontSize: 16, opacity: 0.85 }}>Dev mode</span>
-        </label>
-      </div>
-
-      {/* Dev panel (left-aligned inside the card for readability) */}
-      {devMode && (
+      {/* Card/container — finite width so it's truly centered */}
+      <div
+        style={{
+          width: "min(900px, 96vw)",                // whichever is larger, 900px or 96% of viewport width
+          padding: "clamp(16px, 3vw, 32px)",        // never smaller than 16px, never bigger than 32px, scales with viewport width in between.
+          borderRadius: 16,                         //rounded corners (not inherited)
+          lineHeight: 1.5,                          //vertical spacing between lines
+          fontFamily: "system-ui, Arial",           //typeface
+          color: "#eee",                          //text color
+          textAlign: "center",                      //aligns texts in box center horizontally
+          boxSizing: "border-box",                  //changes how width and height are calculated, includes padding and border inside width
+          background: "#4e3f3fff",                
+        }}
+      >
+        {/* Header (XRP PRICE) + Exchange*/}
         <div
           style={{
-            marginTop: 20,
-            padding: 16,
-            border: "1px solid #4a4a4a",
-            borderRadius: 12,
-            background: "#333",
-            textAlign: "left",
+            display: "flex",                        //turns a row into a flex container
+            justifyContent: "center",               //justify = horizontal (start, center, end)
+            alignItems: "center",                   //align = vertical (start, center, end)
+                                                    //content = whole set of tracks/items, items =  alignment for all children, self = alignment for one specific child
+            gap: 12
+          }}>
+
+          {/*"XRP Price"*/}
+          <h1 
+            style={{ 
+              margin: 0, 
+              fontSize: "clamp(22px, 4.2vw, 48px)" 
+            }}>
+              XRP Price
+          </h1>
+
+          {/*If dev mode selected, show api provider*/}
+          {settingsMode && (
+            <select
+              value={provider}
+              onChange={(e) => setProvider(e.target.value as StreamProvider)}
+              style={{ padding: "6px 10px", borderRadius: 8, fontSize: "clamp(12px, 2.2vw, 14px)" }}
+            >
+              <option value="binance">Binance WS</option>
+              <option value="kraken">Kraken WS</option>
+            </select>
+          )}
+        </div>
+
+
+        {/* Price readout */}
+        <div style={{ marginTop: 20, fontSize: "clamp(24px, 5vw, 44px)" }}>
+          <p style={{ fontSize: "clamp(28px, 6.5vw, 64px)", fontWeight: 800, margin: 0 }}>{formatPrice(price)}</p>
+          <p style={{ margin: 0, fontSize: "clamp(12px, 2vw, 14px)", opacity: 0.7 }}>
+            {updatedAt ? `Last updated ${timeAgo(updatedAt, nowTs)}` : ""}
+          </p>
+        </div>
+
+        {/*Chart*/}
+        <HistoryChart decimals={decimals} settingsMode={settingsMode} />
+
+        {/* Settings mode toggle*/}
+        <div
+          style={{
+            display: "flex",
+            gap: 16, // space between the two
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 12,
+            marginTop: 10
           }}
         >
-          <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>
-            Mode:{" "}
-            <strong>
-              {status === "streaming"
-                ? "WebSocket (live)"
-                : status === "polling"
-                ? "REST fallback"
-                : status === "error"
-                ? "Error (retrying…)"
-                : "Idle"}
-            </strong>
-            {errorMsg && <span style={{ color: "crimson", marginLeft: 8 }}>• {errorMsg}</span>}
-          </div>
+          <label style={{ display: "flex", alignItems: "center"}}>
+            <input
+              type="checkbox"
+              checked={settingsMode}
+              onChange={(e) => setSettingsMode(e.target.checked)}
+            />
+            Settings
+          </label>
 
-          <div style={{ display: "grid", gap: 12 }}>
-            <div>
-              <label style={{ fontSize: 14, opacity: 0.9 }}>
-                Fallback refresh: <strong>{intervalSec}</strong>s
-              </label>
-              <input
-                type="range"
-                min={1}
-                max={300}
-                step={1}
-                value={sliderSec}
-                onChange={(e) => setSliderSec(Number(e.target.value))}
-                onPointerUp={() => setIntervalSec(sliderSec)}
-                onKeyUp={(e) => {
-                  if (e.key === "Enter" || e.key === " ") setIntervalSec(sliderSec);
-                }}
-                style={{ width: "100%" }}
-              />
-              <div style={{ display: "flex", justifyContent: "center", fontSize: 12, opacity: 0.7 }}>
-                <span>1s</span>
-                <span>300s</span>
+          <label style={{ display: "flex", alignItems: "center"}}>
+            <input
+              type="checkbox"
+              checked={devMode}
+              onChange={(e) => setDevMode(e.target.checked)}
+            />
+            Dev mode
+          </label>
+        </div>
+        
+
+        {/* Dev panel (left-aligned inside the card for readability)ggv */}
+        {devMode && (
+          <div
+            style={{
+              marginTop: 20,
+              padding: 16,
+              border: "1px solid #4a4a4a",
+              borderRadius: 12,
+              background: "#333",
+              textAlign: "left",
+            }}
+          >
+            <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>
+              Mode:{" "}
+              <strong>
+                {status === "streaming"
+                  ? "WebSocket (live)"
+                  : status === "polling"
+                    ? "REST fallback"
+                    : status === "error"
+                      ? "Error (retrying…)"
+                      : "Idle"}
+              </strong>
+              {errorMsg && <span style={{ color: "crimson", marginLeft: 8 }}>• {errorMsg}</span>}
+            </div>
+
+            <div style={{ display: "grid", gap: 12 }}>
+              <div>
+                <label style={{ fontSize: 14, opacity: 0.9 }}>
+                  Fallback refresh: <strong>{intervalSec}</strong>s
+                </label>
+                <input
+                  type="range"
+                  min={1}
+                  max={300}
+                  step={1}
+                  value={sliderSec}
+                  onChange={(e) => setSliderSec(Number(e.target.value))}
+                  onPointerUp={() => setIntervalSec(sliderSec)}
+                  onKeyUp={(e) => {
+                    if (e.key === "Enter" || e.key === " ") setIntervalSec(sliderSec);
+                  }}
+                  style={{ width: "100%" }}
+                />
+                <div style={{ display: "flex", justifyContent: "center", fontSize: 12, opacity: 0.7 }}>
+                  <span>1s</span>
+                  <span>300s</span>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 14, opacity: 0.9 }}>
+                  Decimals: <strong>{decimals}</strong>
+                </label>
+                <input
+                  type="range"
+                  min={1}
+                  max={4}
+                  step={1}
+                  value={decimals}
+                  onChange={(e) => setDecimals(Number(e.target.value))}
+                  style={{ width: "100%" }}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => fetchREST()}
+                  style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #777", cursor: "pointer" }}
+                >
+                  Fetch once (REST)
+                </button>
+                <button
+                  onClick={() => {
+                    reconnectAttemptRef.current = 0;
+                    connectWS();
+                  }}
+                  style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #777", cursor: "pointer" }}
+                >
+                  Restart WS
+                </button>
+                <button
+                  onClick={() => setIntervalSec(1)}
+                  style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #777", cursor: "pointer" }}
+                >
+                  Turbo 1s
+                </button>
               </div>
             </div>
-
-            <div>
-              <label style={{ fontSize: 14, opacity: 0.9 }}>
-                Decimals: <strong>{decimals}</strong>
-              </label>
-              <input
-                type="range"
-                min={1}
-                max={4}
-                step={1}
-                value={decimals}
-                onChange={(e) => setDecimals(Number(e.target.value))}
-                style={{ width: "100%" }}
-              />
-            </div>
-
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => fetchREST()}
-                style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #777", cursor: "pointer" }}
-              >
-                Fetch once (REST)
-              </button>
-              <button
-                onClick={() => {
-                  reconnectAttemptRef.current = 0;
-                  connectWS();
-                }}
-                style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #777", cursor: "pointer" }}
-              >
-                Restart WS
-              </button>
-              <button
-                onClick={() => setIntervalSec(1)}
-                style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #777", cursor: "pointer" }}
-              >
-                Turbo 1s
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 }

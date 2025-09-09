@@ -3,20 +3,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type RangeKey = "1D" | "7D" | "30D" | "90D" | "1Y";
 const RANGE_TO_DAYS: Record<RangeKey, number> = {
-    "1D": 1,
-    "7D": 7,
-    "30D": 30,
-    "90D": 90,
-    "1Y": 365,
+  "1D": 1,
+  "7D": 7,
+  "30D": 30,
+  "90D": 90,
+  "1Y": 365,
 };
 
 type Pt = { t: number; p: number };
 
 export function HistoryChart({
-    decimals = 4,
-    height = 260,
+  decimals = 4,
+  settingsMode = false,
+  height = 260,
 }: {
-    decimals?: number;
+  decimals?: number;
+  settingsMode?: boolean;
   height?: number;
 }) {
   const [range, setRange] = useState<RangeKey>("7D");
@@ -77,7 +79,7 @@ export function HistoryChart({
     fetchHist();
     return () => abortRef.current?.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, decimals]);
+  }, [range, decimals, settingsMode]);
 
   // layout
   const padding = { top: 14, right: 14, bottom: 24, left: 40 };
@@ -167,25 +169,7 @@ export function HistoryChart({
 
   return (
     <div style={{ width: "100%", marginTop: 12 }}>
-      {/* Range buttons */}
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-        {(["1D", "7D", "30D", "90D", "1Y"] as RangeKey[]).map((rk) => (
-          <button
-            key={rk}
-            onClick={() => setRange(rk)}
-            style={{
-              padding: "6px 10px",
-              borderRadius: 8,
-              border: rk === range ? "1px solid #aaa" : "1px solid #555",
-              background: rk === range ? "#444" : "#2e2e2e",
-              color: "#eee",
-              cursor: "pointer",
-            }}
-          >
-            {rk}
-          </button>
-        ))}
-      </div>
+      
 
       {/* Chart */}
       <div style={{ width: "100%", marginTop: 10 }}>
@@ -241,59 +225,59 @@ export function HistoryChart({
                     strokeWidth={2}
                   />
                   {/* tooltip (pure SVG) */}
-                {hoverIdx !== null && (
-                <>
-                    {/* vertical guide */}
-                    <line
-                    x1={xAtIndex(hoverIdx)}
-                    x2={xAtIndex(hoverIdx)}
-                    y1={padding.top}
-                    y2={height - padding.bottom}
-                    stroke="#aaa"
-                    strokeDasharray="4 4"
-                    opacity={0.7}
-                    pointerEvents="none"
-                    />
-                    {/* point */}
-                    <circle
-                    cx={xAtIndex(hoverIdx)}
-                    cy={yAtIndex(hoverIdx)}
-                    r={4}
-                    fill="#fff"
-                    stroke="#7db4ff"
-                    strokeWidth={2}
-                    pointerEvents="none"
-                    />
+                  {hoverIdx !== null && (
+                    <>
+                      {/* vertical guide */}
+                      <line
+                        x1={xAtIndex(hoverIdx)}
+                        x2={xAtIndex(hoverIdx)}
+                        y1={padding.top}
+                        y2={height - padding.bottom}
+                        stroke="#aaa"
+                        strokeDasharray="4 4"
+                        opacity={0.7}
+                        pointerEvents="none"
+                      />
+                      {/* point */}
+                      <circle
+                        cx={xAtIndex(hoverIdx)}
+                        cy={yAtIndex(hoverIdx)}
+                        r={4}
+                        fill="#fff"
+                        stroke="#7db4ff"
+                        strokeWidth={2}
+                        pointerEvents="none"
+                      />
 
-                    {/* tooltip box */}
-                    {(() => {
-                    const W = 180;
-                    const H = 44;
-                    // keep the tooltip inside the chart bounds
-                    const rawX = xAtIndex(hoverIdx) + 8;
-                    const x = Math.min(
-                        Math.max(rawX, padding.left),
-                        width - padding.right - W
-                    );
-                    const rawY = yAtIndex(hoverIdx) - H - 8; // prefer above the point
-                    const y = Math.min(
-                        Math.max(rawY, padding.top),
-                        height - padding.bottom - H
-                    );
-                    return (
-                        <g transform={`translate(${x}, ${y})`} pointerEvents="none">
-                        <rect width={W} height={H} rx={8} fill="#000" opacity={0.7} />
-                        <text x={10} y={18} fill="#fff" fontSize={12} opacity={0.9}>
-                            {fmtDate(data[hoverIdx].t)}
-                        </text>
-                        <text x={10} y={34} fill="#fff" fontSize={12} fontWeight={700}>
-                            {fmtPrice(data[hoverIdx].p)}
-                        </text>
-                        </g>
-                    );
-                    })()}
-                </>
-                )}
+                      {/* tooltip box */}
+                      {(() => {
+                        const W = 180;
+                        const H = 44;
+                        // keep the tooltip inside the chart bounds
+                        const rawX = xAtIndex(hoverIdx) + 8;
+                        const x = Math.min(
+                          Math.max(rawX, padding.left),
+                          width - padding.right - W
+                        );
+                        const rawY = yAtIndex(hoverIdx) - H - 8; // prefer above the point
+                        const y = Math.min(
+                          Math.max(rawY, padding.top),
+                          height - padding.bottom - H
+                        );
+                        return (
+                          <g transform={`translate(${x}, ${y})`} pointerEvents="none">
+                            <rect width={W} height={H} rx={8} fill="#000" opacity={0.7} />
+                            <text x={10} y={18} fill="#fff" fontSize={12} opacity={0.9}>
+                              {fmtDate(data[hoverIdx].t)}
+                            </text>
+                            <text x={10} y={34} fill="#fff" fontSize={12} fontWeight={700}>
+                              {fmtPrice(data[hoverIdx].p)}
+                            </text>
+                          </g>
+                        );
+                      })()}
+                    </>
+                  )}
                 </>
               )}
 
@@ -306,6 +290,28 @@ export function HistoryChart({
           </div>
         )}
       </div>
+
+      {/* Range buttons */}
+      {settingsMode && (
+        <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 10  }}>
+          {(["1D", "7D", "30D", "90D", "1Y"] as RangeKey[]).map((rk) => (
+            <button
+              key={rk}
+              onClick={() => setRange(rk)}
+              style={{
+                padding: "6px 10px",
+                borderRadius: 8,
+                border: rk === range ? "1px solid #aaa" : "1px solid #555",
+                background: rk === range ? "#444" : "#2e2e2e",
+                color: "#eee",
+                cursor: "pointer",
+              }}
+            >
+              {rk}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
