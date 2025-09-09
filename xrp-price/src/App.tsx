@@ -2,9 +2,7 @@
 
 function App() {
   return (
-    <div>
       <XrpPrice />
-    </div>
   );
 }
 

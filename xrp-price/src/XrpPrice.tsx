@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { HistoryChart } from "./HistoryChart.tsx";
 
 type StreamProvider = "binance" | "kraken";
 
@@ -83,7 +84,7 @@ export default function XrpPrice() {
         }
       };
 
-      ws.onerror = (e) => {
+      ws.onerror = (_e) => {
         setErrorMsg("WebSocket error (likely blocked or dropped). See console for details.");
       };
 
@@ -192,92 +193,181 @@ export default function XrpPrice() {
   };
 
   // basic environment hints
-  const online = typeof navigator !== "undefined" ? navigator.onLine : true;
-  const pageSecure = typeof window !== "undefined" ? window.location.protocol === "https:" : false;
+  //const online = typeof navigator !== "undefined" ? navigator.onLine : true;
+  //const pageSecure = typeof window !== "undefined" ? window.location.protocol === "https:" : false;
+
+  // tick every second so "x seconds ago" stays fresh (no network)
+  const [nowTs, setNowTs] = useState<number>(Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // human-readable "x seconds/minutes/hours ago"
+  function timeAgo(updatedAtMs: number | null, nowMs: number) {
+    if (!updatedAtMs) return "";
+    const s = Math.max(0, Math.floor((nowMs - updatedAtMs) / 1000));
+    if (s < 5) return "just now";
+    if (s < 60) return `${s} second${s === 1 ? "" : "s"} ago`;
+    const m = Math.floor(s / 60);
+    if (m < 60) return `${m} minute${m === 1 ? "" : "s"} ago`;
+    const h = Math.floor(m / 60);
+    return `${h} hour${h === 1 ? "" : "s"} ago`;
+  }
 
   return (
-    <div style={{ fontFamily: "system-ui, Arial", padding: 24, maxWidth: 600, margin: "40px auto", lineHeight: 1.4 }}>
-      {/* Header with Dev toggle & provider */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <h1 style={{ margin: 0 }}>XRP Price</h1>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
-            <input type="checkbox" checked={devMode} onChange={(e) => setDevMode(e.target.checked)} />
-            <span style={{ fontSize: 14, opacity: 0.85 }}>Dev mode</span>
-          </label>
-          {devMode && (
-            <select value={provider} onChange={(e) => setProvider(e.target.value as StreamProvider)} style={{ padding: "4px 8px", borderRadius: 6 }}>
-              <option value="binance">Binance WS</option>
-              <option value="kraken">Kraken WS</option>
-            </select>
-          )}
-        </div>
+  // Viewport wrapper — centers the card both directions
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,                     // top:0 right:0 bottom:0 left:0
+      display: "grid",
+      placeItems: "center",
+      background: "#000000ff",           // page bg
+      zIndex: 0,                    // stay behind any dev overlays
+    }}
+  >
+    {/* Card/container — finite width so it's truly centered */}
+    <div
+      style={{
+      width: "min(900px, 96vw)",                // responsive card width
+      padding: "clamp(16px, 3vw, 32px)",        // fluid padding
+      borderRadius: 16,
+      lineHeight: 1.5,
+      fontFamily: "system-ui, Arial",
+      color: "#eee",
+      textAlign: "center",
+      boxSizing: "border-box",
+    }}
+    >
+      {/* Header with Dev toggle & provider — CENTERED, no space-between */}
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
+        <h1 style={{ margin: 0, fontSize: "clamp(22px, 4.2vw, 48px)" }}>XRP Price</h1>
+        {devMode && (
+          <select
+            value={provider}
+            onChange={(e) => setProvider(e.target.value as StreamProvider)}
+            style={{ padding: "6px 10px", borderRadius: 8, fontSize: "clamp(12px, 2.2vw, 14px)" }}
+          >
+            <option value="binance">Binance WS</option>
+            <option value="kraken">Kraken WS</option>
+          </select>
+        )}
       </div>
 
-      {/* Minimal readout */}
-      <div style={{ marginTop: 16 }}>
-        <p style={{ fontSize: 36, fontWeight: 800, margin: 0 }}>{formatPrice(price)}</p>
-        <p style={{ margin: 0, fontSize: 12, opacity: 0.7 }}>
-          {updatedAt ? `Updated ${new Date(updatedAt).toLocaleTimeString()}` : ""}
+
+      {/* Price readout */}
+      <div style={{ marginTop: 20, fontSize: "clamp(24px, 5vw, 44px)" }}>
+        <p style={{ fontSize: "clamp(28px, 6.5vw, 64px)", fontWeight: 800, margin: 0 }}>{formatPrice(price)}</p>
+        <p style={{ margin: 0, fontSize: "clamp(12px, 2vw, 14px)", opacity: 0.7 }}>
+          {updatedAt ? `Last updated ${timeAgo(updatedAt, nowTs)}` : ""}
         </p>
       </div>
+      
+      {/*Chart*/}
+      <HistoryChart decimals={decimals} />
+      
+      {/* Dev mode toggle*/}
+      <div style={{ marginTop: 24, textAlign: "center" }}>
+        <label style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, cursor: "pointer" }}>
+          <input type="checkbox" checked={devMode} onChange={(e) => setDevMode(e.target.checked)} />
+          <span style={{ fontSize: 16, opacity: 0.85 }}>Dev mode</span>
+        </label>
+      </div>
 
-      {/* Dev panel */}
+      {/* Dev panel (left-aligned inside the card for readability) */}
       {devMode && (
-        <div style={{ marginTop: 16, padding: 12, border: "1px solid #e3e3e3", borderRadius: 12, background: "#fafafa" }}>
-          <div style={{ fontSize: 14, opacity: 0.85, marginBottom: 8 }}>
-            Mode: <strong>
-              {status === "streaming" ? "WebSocket (live)"
-                : status === "polling" ? "REST fallback"
-                : status === "error" ? "Error (retrying…)" : "Idle"}
+        <div
+          style={{
+            marginTop: 20,
+            padding: 16,
+            border: "1px solid #4a4a4a",
+            borderRadius: 12,
+            background: "#333",
+            textAlign: "left",
+          }}
+        >
+          <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>
+            Mode:{" "}
+            <strong>
+              {status === "streaming"
+                ? "WebSocket (live)"
+                : status === "polling"
+                ? "REST fallback"
+                : status === "error"
+                ? "Error (retrying…)"
+                : "Idle"}
             </strong>
             {errorMsg && <span style={{ color: "crimson", marginLeft: 8 }}>• {errorMsg}</span>}
           </div>
 
           <div style={{ display: "grid", gap: 12 }}>
-            {/* Fallback refresh */}
             <div>
-              <label style={{ fontSize: 14, opacity: 0.85 }}>Fallback refresh: <strong>{intervalSec}</strong>s</label>
-              <input type="range" min={1} max={300} step={1}
-                     value={sliderSec}
-                     onChange={(e) => setSliderSec(Number(e.target.value))}
-                     onPointerUp={() => setIntervalSec(sliderSec)}
-                     onKeyUp={(e) => { if (e.key === "Enter" || e.key === " ") setIntervalSec(sliderSec); }}
-                     style={{ width: "100%" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, opacity: 0.7 }}>
-                <span>1s</span><span>300s</span>
+              <label style={{ fontSize: 14, opacity: 0.9 }}>
+                Fallback refresh: <strong>{intervalSec}</strong>s
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={300}
+                step={1}
+                value={sliderSec}
+                onChange={(e) => setSliderSec(Number(e.target.value))}
+                onPointerUp={() => setIntervalSec(sliderSec)}
+                onKeyUp={(e) => {
+                  if (e.key === "Enter" || e.key === " ") setIntervalSec(sliderSec);
+                }}
+                style={{ width: "100%" }}
+              />
+              <div style={{ display: "flex", justifyContent: "center", fontSize: 12, opacity: 0.7 }}>
+                <span>1s</span>
+                <span>300s</span>
               </div>
             </div>
 
-            {/* Decimals */}
             <div>
-              <label style={{ fontSize: 14, opacity: 0.85 }}>Decimals: <strong>{decimals}</strong></label>
-              <input type="range" min={1} max={4} step={1} value={decimals} onChange={(e) => setDecimals(Number(e.target.value))} style={{ width: "100%" }} />
+              <label style={{ fontSize: 14, opacity: 0.9 }}>
+                Decimals: <strong>{decimals}</strong>
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={4}
+                step={1}
+                value={decimals}
+                onChange={(e) => setDecimals(Number(e.target.value))}
+                style={{ width: "100%" }}
+              />
             </div>
 
-            {/* Buttons */}
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => fetchREST()} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc", cursor: "pointer" }}>
+              <button
+                onClick={() => fetchREST()}
+                style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #777", cursor: "pointer" }}
+              >
                 Fetch once (REST)
               </button>
-              <button onClick={() => { reconnectAttemptRef.current = 0; connectWS(); }}
-                      style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc", cursor: "pointer" }}>
+              <button
+                onClick={() => {
+                  reconnectAttemptRef.current = 0;
+                  connectWS();
+                }}
+                style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #777", cursor: "pointer" }}
+              >
                 Restart WS
               </button>
-              <button onClick={() => setIntervalSec(1)} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc", cursor: "pointer" }}>
+              <button
+                onClick={() => setIntervalSec(1)}
+                style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #777", cursor: "pointer" }}
+              >
                 Turbo 1s
               </button>
-            </div>
-
-            {/* Diagnostics */}
-            <div style={{ fontSize: 12, opacity: 0.8 }}>
-              <div>Online: <strong>{online ? "yes" : "no"}</strong></div>
-              <div>Page secure (https): <strong>{pageSecure ? "yes" : "no"}</strong></div>
-              <div>User agent: <code>{typeof navigator !== "undefined" ? navigator.userAgent : "n/a"}</code></div>
             </div>
           </div>
         </div>
       )}
     </div>
-  );
+  </div>
+);
 }
