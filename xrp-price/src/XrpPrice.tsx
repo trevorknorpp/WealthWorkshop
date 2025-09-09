@@ -9,7 +9,11 @@ function makeWS(provider: StreamProvider) {
   return new WebSocket("wss://ws.kraken.com");
 }
 
-export default function XrpPrice() {
+export default function XrpPrice({
+  onBack, // <-- optional
+}: {
+  onBack?: () => void;
+}) {
   const [price, setPrice] = useState<number | null>(null);
   const [status, setStatus] = useState<"idle" | "streaming" | "polling" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string>("");
@@ -240,26 +244,46 @@ export default function XrpPrice() {
           color: "#eee",                          //text color
           textAlign: "center",                      //aligns texts in box center horizontally
           boxSizing: "border-box",                  //changes how width and height are calculated, includes padding and border inside width
-          background: "#4e3f3fff",                
+          background: "#4e3f3fff",
         }}
       >
         {/* Header (XRP PRICE) + Exchange*/}
         <div
           style={{
-            display: "flex",                        //turns a row into a flex container
+            display: "grid",                        //turns a row into a grid container
+            gridTemplateColumns: "auto 1fr auto",
             justifyContent: "center",               //justify = horizontal (start, center, end)
             alignItems: "center",                   //align = vertical (start, center, end)
-                                                    //content = whole set of tracks/items, items =  alignment for all children, self = alignment for one specific child
+            //content = whole set of tracks/items, items =  alignment for all children, self = alignment for one specific child
             gap: 12
           }}>
 
+          {/* Back (left) */}
+          {onBack ? (
+            <button
+              onClick={onBack}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 999,
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "rgba(255,255,255,0.06)",
+                color: "#eee",
+                cursor: "pointer",
+              }}
+            >
+              ← Back
+            </button>
+          ) : (
+            <span /> // keeps the title centered when no back button
+          )}
+
           {/*"XRP Price"*/}
-          <h1 
-            style={{ 
-              margin: 0, 
-              fontSize: "clamp(22px, 4.2vw, 48px)" 
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "clamp(22px, 4.2vw, 48px)"
             }}>
-              XRP Price
+            XRP Price
           </h1>
 
           {/*If dev mode selected, show api provider*/}
@@ -298,7 +322,7 @@ export default function XrpPrice() {
             marginTop: 10
           }}
         >
-          <label style={{ display: "flex", alignItems: "center"}}>
+          <label style={{ display: "flex", alignItems: "center" }}>
             <input
               type="checkbox"
               checked={settingsMode}
@@ -307,7 +331,7 @@ export default function XrpPrice() {
             Settings
           </label>
 
-          <label style={{ display: "flex", alignItems: "center"}}>
+          <label style={{ display: "flex", alignItems: "center" }}>
             <input
               type="checkbox"
               checked={devMode}
@@ -316,7 +340,7 @@ export default function XrpPrice() {
             Dev mode
           </label>
         </div>
-        
+
 
         {/* Dev panel (left-aligned inside the card for readability)ggv */}
         {devMode && (
