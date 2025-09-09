@@ -19,6 +19,13 @@ export default function XrpPrice({
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
 
+  // at top of XrpPrice.tsx (near other state)
+  const LAST_PRICE_KEY = "xrp_last_price";
+
+  const [isStale, setIsStale] = useState(false);               // true while showing cached value
+  const [dir, setDir] = useState<"none" | "up" | "down" | "flat">("none"); // direction vs. last shown
+
+
   // Dev mode + provider choice (persisted)
   const [devMode, setDevMode] = useState<boolean>(() => localStorage.getItem("xrp_dev_mode") === "1");
   const [settingsMode, setSettingsMode] = useState<boolean>(() => localStorage.getItem("xrp_settings_mode") == "1");
@@ -39,6 +46,16 @@ export default function XrpPrice({
   const [sliderSec, setSliderSec] = useState<number>(intervalSec);
   useEffect(() => localStorage.setItem("xrp_decimals", String(decimals)), [decimals]);
   useEffect(() => localStorage.setItem("xrp_refresh_sec", String(intervalSec)), [intervalSec]);
+
+  // right after your other useEffects or before connectWS()
+  useEffect(() => {
+    const cached = Number(localStorage.getItem(LAST_PRICE_KEY));
+    if (Number.isFinite(cached)) {
+      setPrice(cached);       // show it immediately
+      setIsStale(true);       // mark as cached -> purple
+    }
+  }, []);
+
 
   // --- WebSocket stream (with provider switch + diagnostics) ---
   const wsRef = useRef<WebSocket | null>(null);
@@ -71,8 +88,7 @@ export default function XrpPrice({
           if (provider === "binance") {
             const p = msg?.c ? Number(msg.c) : null;
             if (p && Number.isFinite(p)) {
-              setPrice(p);
-              setUpdatedAt(Date.now());
+              commitLivePrice(p);
             }
           } else {
             // Kraken ticker: [channelID, { c: ["last","lot"] , ... }, "ticker", "XRP/USD"]
@@ -80,8 +96,7 @@ export default function XrpPrice({
               const pStr = msg[1]?.c?.[0];
               const p = pStr ? Number(pStr) : null;
               if (p && Number.isFinite(p)) {
-                setPrice(p);
-                setUpdatedAt(Date.now());
+                commitLivePrice(p);
               }
             }
           }
@@ -158,8 +173,7 @@ export default function XrpPrice({
       try {
         const v = await step();
         if (Number.isFinite(v)) {
-          setPrice(v);
-          setUpdatedAt(Date.now());
+          commitLivePrice(v);
           setStatus((s) => (s === "streaming" ? s : "polling"));
           backoffRef.current = 0;
           setErrorMsg("");
@@ -198,6 +212,12 @@ export default function XrpPrice({
     }).format(n);
   };
 
+  const priceColor =
+    isStale ? "#cac6d158" :           // purple while cached is showing
+      dir === "up" ? "#85f28a" :      // green on first live if higher
+        dir === "down" ? "#ff7b7b" :    // red if lower
+          "#eee";                         // neutral
+
   // basic environment hints
   //const online = typeof navigator !== "undefined" ? navigator.onLine : true;
   //const pageSecure = typeof window !== "undefined" ? window.location.protocol === "https:" : false;
@@ -221,6 +241,23 @@ export default function XrpPrice({
     return `${h} hour${h === 1 ? "" : "s"} ago`;
   }
 
+  function commitLivePrice(p: number) {
+    // compare to what’s currently on screen (cached or previous live)
+    const prev = price;
+    if (prev != null) {
+      if (p > prev) setDir("up");
+      else if (p < prev) setDir("down");
+      else setDir("flat");
+    } else {
+      setDir("none");
+    }
+
+    setPrice(p);
+    setIsStale(false);                           // we’re live now
+    setUpdatedAt(Date.now());
+    localStorage.setItem(LAST_PRICE_KEY, String(p));
+  }
+
   return (
     // Viewport wrapper — centers the card both directions
     <div
@@ -236,26 +273,24 @@ export default function XrpPrice({
       {/* Card/container — finite width so it's truly centered */}
       <div
         style={{
-          width: "min(900px, 96vw)",                // whichever is larger, 900px or 96% of viewport width
-          padding: "clamp(16px, 3vw, 32px)",        // never smaller than 16px, never bigger than 32px, scales with viewport width in between.
-          borderRadius: 16,                         //rounded corners (not inherited)
+          width: "min(700px, 96vw)",                // whichever is larger, 900px or 96% of viewport width
+          padding: "clamp(12px, 2.2vw, 20px) clamp(16px, 3vw, 28px)",       // never smaller than px, never bigger than px, scales with viewport width in between.
+          borderRadius: 16,                         //rounded corners (not inherite)
           lineHeight: 1.5,                          //vertical spacing between lines
           fontFamily: "system-ui, Arial",           //typeface
-          color: "#eee",                          //text color
+          color: "#ffffffff",                          //text color
           textAlign: "center",                      //aligns texts in box center horizontally
           boxSizing: "border-box",                  //changes how width and height are calculated, includes padding and border inside width
-          background: "#4e3f3fff",
+          background: "#000000ff",
         }}
       >
         {/* Header (XRP PRICE) + Exchange*/}
         <div
           style={{
-            display: "grid",                        //turns a row into a grid container
-            gridTemplateColumns: "auto 1fr auto",
-            justifyContent: "center",               //justify = horizontal (start, center, end)
+          display: "flex",                        //turns a row into a grid container
             alignItems: "center",                   //align = vertical (start, center, end)
             //content = whole set of tracks/items, items =  alignment for all children, self = alignment for one specific child
-            gap: 12
+            gap: 12,
           }}>
 
           {/* Back (left) */}
@@ -266,7 +301,7 @@ export default function XrpPrice({
                 padding: "8px 12px",
                 borderRadius: 999,
                 border: "1px solid rgba(255,255,255,0.2)",
-                background: "rgba(255,255,255,0.06)",
+                background: "rgba(111, 91, 91, 0.4)",
                 color: "#eee",
                 cursor: "pointer",
               }}
@@ -274,42 +309,65 @@ export default function XrpPrice({
               ← Back
             </button>
           ) : (
-            <span /> // keeps the title centered when no back button
+            <span style={{ gridColumn: "1 / 2" }} /> // keeps the layout
           )}
 
           {/*"XRP Price"*/}
           <h1
             style={{
               margin: 0,
-              fontSize: "clamp(22px, 4.2vw, 48px)"
-            }}>
-            XRP Price
-          </h1>
+              fontSize: "clamp(22px, 4.2vw, 48px)",
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+            }}
+          >
+            XRP</h1>
 
-          {/*If dev mode selected, show api provider*/}
-          {settingsMode && (
+          {/*If settings mode selected, show api provider*/}
+          {settingsMode ? (
             <select
               value={provider}
               onChange={(e) => setProvider(e.target.value as StreamProvider)}
-              style={{ padding: "6px 10px", borderRadius: 8, fontSize: "clamp(12px, 2.2vw, 14px)" }}
+              style={{
+                padding: "6px 10px",
+                borderRadius: 8,
+                fontSize: "clamp(12px, 2.2vw, 14px)",
+                marginLeft: "auto",
+              }}
             >
               <option value="binance">Binance WS</option>
               <option value="kraken">Kraken WS</option>
             </select>
+          ) : (
+            <span/> // spacer to mirror right slot
           )}
         </div>
 
-
-        {/* Price readout */}
-        <div style={{ marginTop: 20, fontSize: "clamp(24px, 5vw, 44px)" }}>
-          <p style={{ fontSize: "clamp(28px, 6.5vw, 64px)", fontWeight: 800, margin: 0 }}>{formatPrice(price)}</p>
-          <p style={{ margin: 0, fontSize: "clamp(12px, 2vw, 14px)", opacity: 0.7 }}>
-            {updatedAt ? `Last updated ${timeAgo(updatedAt, nowTs)}` : ""}
+        <div style={{ marginTop: 8, fontSize: "clamp(24px, 5vw, 44px)" }}>
+          <p style={{
+            fontSize: "clamp(28px, 6.5vw, 64px)",
+            fontWeight: 800,
+            margin: 0,
+            color: priceColor,
+            transition: "color 180ms ease",
+          }}>
+            {formatPrice(price)}
           </p>
         </div>
 
         {/*Chart*/}
-        <HistoryChart decimals={decimals} settingsMode={settingsMode} />
+        <HistoryChart decimals={decimals} settingsMode={settingsMode} square minimal />
+
+        <div style={{ marginTop: 8, fontSize: "clamp(24px, 5vw, 44px)" }}>
+          <p style={{ margin: 0, fontSize: "clamp(12px, 2vw, 14px)", opacity: 0.7 }}>
+            {isStale
+              ? "Showing cached price…"
+              : updatedAt ? `Last updated ${timeAgo(updatedAt, nowTs)}` : ""}
+          </p>
+        </div>
 
         {/* Settings mode toggle*/}
         <div

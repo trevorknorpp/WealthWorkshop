@@ -43,6 +43,7 @@ export default function App() {
   // Persist page (don’t persist home)
   useEffect(() => {
     if (page === "home") localStorage.removeItem(LAST_PAGE_KEY);
+    //else localStorage.removeItem(LAST_PAGE_KEY);
     else localStorage.setItem(LAST_PAGE_KEY, page);
   }, [page]);
 

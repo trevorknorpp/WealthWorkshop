@@ -16,11 +16,16 @@ export function HistoryChart({
   decimals = 4,
   settingsMode = false,
   height = 260,
+  square = true,        // NEW: make the plot square by default
+  minimal = true,       // NEW: minimalist styling
 }: {
   decimals?: number;
   settingsMode?: boolean;
   height?: number;
+  square?: boolean;
+  minimal?: boolean;
 }) {
+
   const [range, setRange] = useState<RangeKey>("7D");
   const [data, setData] = useState<Pt[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
@@ -81,9 +86,9 @@ export function HistoryChart({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, decimals, settingsMode]);
 
-  // layout
-  const padding = { top: 14, right: 14, bottom: 24, left: 40 };
-  const width = 720; // logical width; SVG will scale to container width via CSS
+  const padding = { top: 12, right: 12, bottom: 20, left: 36 };
+  const W = 720;                         // logical width (viewBox units)
+  const H = square ? W : height;         // square if wanted
 
   // scales
   const { pathD, minP, maxP, xAtIndex, yAtIndex } = useMemo(() => {
@@ -103,8 +108,9 @@ export function HistoryChart({
     const minY = Math.min(...ys);
     const maxY = Math.max(...ys);
 
-    const innerW = width - padding.left - padding.right;
-    const innerH = height - padding.top - padding.bottom;
+    const innerW = W - padding.left - padding.right;
+    const innerH = H - padding.top - padding.bottom;
+
     const x = (t: number) =>
       padding.left + ((t - minX) / Math.max(1, maxX - minX)) * innerW;
     const y = (p: number) =>
@@ -124,7 +130,7 @@ export function HistoryChart({
       xAtIndex: (i: number) => x(data[i].t),
       yAtIndex: (i: number) => y(data[i].p),
     };
-  }, [data, height]);
+  }, [data, height, square]);
 
   // hover/tooltip
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
@@ -167,12 +173,10 @@ export function HistoryChart({
     return d.toLocaleString(undefined, opts);
   };
 
-  return (
+    return (
     <div style={{ width: "100%", marginTop: 12 }}>
-      
-
       {/* Chart */}
-      <div style={{ width: "100%", marginTop: 10 }}>
+      <div style={{ width: "100%", marginTop: 6 }}>
         {status === "loading" && (
           <div style={{ textAlign: "center", opacity: 0.7 }}>Loading history…</div>
         )}
@@ -182,110 +186,109 @@ export function HistoryChart({
           </div>
         )}
         {status === "ok" && (
-          <div style={{ width: "100%" }}>
+          // Outer box keeps a square aspect by default
+          <div
+            style={{
+              width: "clamp(260px, 58vmin, 620px)",
+              marginInline: "auto",
+              position: "relative",
+              ...(square ? { aspectRatio: "1 / 1" } : { height }), // responsive square
+              borderRadius: 12,
+              border: minimal ? "1px solid rgba(255,255,255,.08)" : "none",
+              background: minimal ? "transparent" : "#2a2a2a",
+              boxShadow: minimal ? "none" : "inset 0 0 0 1px rgba(0,0,0,.2)",
+            }}
+          >
             <svg
               ref={svgRef}
-              viewBox={`0 0 ${width} ${height}`}
-              style={{ width: "100%", height, display: "block", background: "#2a2a2a", borderRadius: 12 }}
-              onMouseMove={onMove}
-              onMouseLeave={onLeave}
+              viewBox={`0 0 ${W} ${H}`}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                display: "block",
+                borderRadius: 12,
+              }}
+              onMouseMove={settingsMode ? onMove : undefined}
+              onMouseLeave={settingsMode ? onLeave : undefined}
             >
-              {/* grid lines */}
-              <g opacity={0.15} stroke="#fff">
-                {/* 4 horizontal lines */}
-                {[0, 1, 2, 3, 4].map((i) => {
-                  const y = padding.top + ((height - padding.top - padding.bottom) / 4) * i;
-                  return <line key={i} x1={padding.left} x2={width - padding.right} y1={y} y2={y} />;
+              {/* grid lines (minimal: 2 faint lines; classic: 4) */}
+              <g opacity={minimal ? 0.12 : 0.15} stroke="#fff">
+                {(minimal ? [1, 3] : [0, 1, 2, 3, 4]).map((i) => {
+                  const y = padding.top + ((H - padding.top - padding.bottom) / 4) * i;
+                  return (
+                    <line
+                      key={i}
+                      x1={padding.left}
+                      x2={W - padding.right}
+                      y1={y}
+                      y2={y}
+                    />
+                  );
                 })}
               </g>
 
               {/* price path */}
-              <path d={pathD} stroke="#7db4ff" strokeWidth={2.5} fill="none" />
+              <path
+                d={pathD}
+                stroke="#88baff"
+                strokeWidth={2.25}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
 
-              {/* hover crosshair + dot + tooltip */}
-              {hoverIdx !== null && (
+              {/* hover crosshair + dot + tooltip (only in settings) */}
+              {settingsMode && hoverIdx !== null && (
                 <>
-                  {/* vertical guide */}
                   <line
                     x1={xAtIndex(hoverIdx)}
                     x2={xAtIndex(hoverIdx)}
                     y1={padding.top}
-                    y2={height - padding.bottom}
+                    y2={H - padding.bottom}
                     stroke="#aaa"
                     strokeDasharray="4 4"
-                    opacity={0.7}
+                    opacity={0.6}
+                    pointerEvents="none"
                   />
-                  {/* point */}
                   <circle
                     cx={xAtIndex(hoverIdx)}
                     cy={yAtIndex(hoverIdx)}
-                    r={4}
+                    r={3.5}
                     fill="#fff"
-                    stroke="#7db4ff"
+                    stroke="#88baff"
                     strokeWidth={2}
+                    pointerEvents="none"
                   />
-                  {/* tooltip (pure SVG) */}
-                  {hoverIdx !== null && (
-                    <>
-                      {/* vertical guide */}
-                      <line
-                        x1={xAtIndex(hoverIdx)}
-                        x2={xAtIndex(hoverIdx)}
-                        y1={padding.top}
-                        y2={height - padding.bottom}
-                        stroke="#aaa"
-                        strokeDasharray="4 4"
-                        opacity={0.7}
-                        pointerEvents="none"
-                      />
-                      {/* point */}
-                      <circle
-                        cx={xAtIndex(hoverIdx)}
-                        cy={yAtIndex(hoverIdx)}
-                        r={4}
-                        fill="#fff"
-                        stroke="#7db4ff"
-                        strokeWidth={2}
-                        pointerEvents="none"
-                      />
-
-                      {/* tooltip box */}
-                      {(() => {
-                        const W = 180;
-                        const H = 44;
-                        // keep the tooltip inside the chart bounds
-                        const rawX = xAtIndex(hoverIdx) + 8;
-                        const x = Math.min(
-                          Math.max(rawX, padding.left),
-                          width - padding.right - W
-                        );
-                        const rawY = yAtIndex(hoverIdx) - H - 8; // prefer above the point
-                        const y = Math.min(
-                          Math.max(rawY, padding.top),
-                          height - padding.bottom - H
-                        );
-                        return (
-                          <g transform={`translate(${x}, ${y})`} pointerEvents="none">
-                            <rect width={W} height={H} rx={8} fill="#000" opacity={0.7} />
-                            <text x={10} y={18} fill="#fff" fontSize={12} opacity={0.9}>
-                              {fmtDate(data[hoverIdx].t)}
-                            </text>
-                            <text x={10} y={34} fill="#fff" fontSize={12} fontWeight={700}>
-                              {fmtPrice(data[hoverIdx].p)}
-                            </text>
-                          </g>
-                        );
-                      })()}
-                    </>
-                  )}
+                  {(() => {
+                    const Wt = 160, Ht = 40;
+                    const rawX = xAtIndex(hoverIdx) + 8;
+                    const x = Math.min(Math.max(rawX, padding.left), W - padding.right - Wt);
+                    const rawY = yAtIndex(hoverIdx) - Ht - 8;
+                    const y = Math.min(Math.max(rawY, padding.top), H - padding.bottom - Ht);
+                    return (
+                      <g transform={`translate(${x}, ${y})`} pointerEvents="none">
+                        <rect width={Wt} height={Ht} rx={8} fill="#000" opacity={0.7} />
+                        <text x={10} y={17} fill="#fff" fontSize={12} opacity={0.9}>
+                          {fmtDate(data[hoverIdx].t)}
+                        </text>
+                        <text x={10} y={32} fill="#fff" fontSize={12} fontWeight={700}>
+                          {fmtPrice(data[hoverIdx].p)}
+                        </text>
+                      </g>
+                    );
+                  })()}
                 </>
               )}
 
-              {/* axes labels (min/max) */}
-              <g fill="#bbb" fontSize={12}>
-                <text x={8} y={padding.top + 12}>{fmtPrice(maxP)}</text>
-                <text x={8} y={height - padding.bottom}>{fmtPrice(minP)}</text>
-              </g>
+              {/* axes labels (hidden in minimal mode) */}
+              {!minimal && (
+                <g fill="#bbb" fontSize={12}>
+                  <text x={8} y={padding.top + 12}>{fmtPrice(maxP)}</text>
+                  <text x={8} y={H - padding.bottom}>{fmtPrice(minP)}</text>
+                </g>
+              )}
             </svg>
           </div>
         )}
@@ -293,7 +296,15 @@ export function HistoryChart({
 
       {/* Range buttons */}
       {settingsMode && (
-        <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap", marginTop: 10  }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            justifyContent: "center",
+            flexWrap: "wrap",
+            marginTop: 10,
+          }}
+        >
           {(["1D", "7D", "30D", "90D", "1Y"] as RangeKey[]).map((rk) => (
             <button
               key={rk}
