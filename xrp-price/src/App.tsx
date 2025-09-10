@@ -1,24 +1,21 @@
  // App.tsx
 import { useEffect, useState } from "react";
 import XrpPrice from "./XrpPrice";
-import WallpaperPicker from "./WallpaperPicker";
-import type { CSSProperties } from "react";
-// If you already built XrpPrice, import it. Otherwise keep the stub below.
-// import XrpPrice from "./XrpPrice";
+import ChaoGraden3D from "./ChaoGarden3D";
+import xrpImg from "./assets/xrp.png";
+import sa2Img from "./assets/sa2.png";
 
+import type { CSSProperties } from "react";
+
+import WallpaperPicker from "./WallpaperPicker";
 import wp1 from "./assets/wallpapers/wp1.jpg";
 import wp2 from "./assets/wallpapers/wp2.jpg";
 import wp3 from "./assets/wallpapers/wp3.jpg";
 
 const WALLPAPERS: string[] = [wp1, wp2, wp3]; 
-
 const WALLPAPER_KEY = "wallpaper_v1";
 
-
-
-type PageKey = "home" | "xrp" | "news" | "watchlist" | "settings";
-const LAST_PAGE_KEY = "last_page_v1";
-
+//general ui styled
 const ui = {
   brand: "#000000ff",
   surface: "#000000ff",
@@ -26,21 +23,24 @@ const ui = {
   surfaceLo: "#000000ff",
   text: "#000000ff",
   faint: "rgba(0, 0, 0, 1)",
-border: "rgba(0, 0, 0, 1)",
+  border: "rgba(0, 0, 0, 1)",
   radius: 16,
+  button: "rgba(82, 69, 69, 1)",
 };
 
-import xrpImg from "./assets/xrp.png";
+type PageKey = "home" | "xrp" | "chao" | "watchlist" | "settings";
+const LAST_PAGE_KEY = "last_page_v1";
 
 type Tile = { key: PageKey; title: string; image?: string };
 
 const TILES: Tile[] = [
   { key: "xrp", title: "XRP", image: xrpImg }, 
-  { key: "news", title: "2", image: "📰" },
+  { key: "chao", title: "", image: sa2Img},
   { key: "watchlist", title: "3", image: "📌" },
   { key: "settings", title: "4", image: "⚙️" },
 ];
 
+//home screen
 export default function App() {
   const [page, setPage] = useState<PageKey>("home");
 
@@ -48,6 +48,8 @@ export default function App() {
   const [wallpaper, setWallpaper] = useState<string | null>(
     () => localStorage.getItem(WALLPAPER_KEY)
   );
+
+  //when wallpaper is updated, store update in local
   useEffect(() => {
     if (wallpaper) localStorage.setItem(WALLPAPER_KEY, wallpaper);
     else localStorage.removeItem(WALLPAPER_KEY);
@@ -67,8 +69,6 @@ export default function App() {
         "radial-gradient(1200px 600px at 50% 10%, #1a1a1a 0%, #0b0b0b 70%)",
     };
 
-
-
   // Load last page on first mount
   useEffect(() => {
     const last = localStorage.getItem(LAST_PAGE_KEY) as PageKey | null;
@@ -80,8 +80,8 @@ export default function App() {
   // Persist page (don’t persist home)
   useEffect(() => {
     if (page === "home") localStorage.removeItem(LAST_PAGE_KEY);
-    //else localStorage.removeItem(LAST_PAGE_KEY);
-    else localStorage.setItem(LAST_PAGE_KEY, page);
+    else localStorage.removeItem(LAST_PAGE_KEY);
+    //else localStorage.setItem(LAST_PAGE_KEY, page);
   }, [page]);
 
   return (
@@ -93,7 +93,7 @@ export default function App() {
         placeItems: "center",
         ...wallpaperBg,
         //background: "radial-gradient(1200px 600px at 50% 10%, #1a1a1a 0%, #0b0b0b 70%)",
-        color: ui.text,
+        color: ui.button,
         fontFamily: "system-ui, Arial",
         lineHeight: 1.5,
       }}
@@ -143,6 +143,7 @@ function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
             aspectRatio: "1 / 1",              // perfect square
             cursor: "pointer",
             transition: "transform 120ms ease, border 120ms ease, box-shadow 120ms ease",
+            color: ui.button,
           }}
           onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
           onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
@@ -192,33 +193,14 @@ function DetailPage({ page, onBack }: { page: PageKey; onBack: () => void }) {
           marginBottom: 16,
         }}
       >
-        <button
-          onClick={onBack}
-          style={{
-            padding: "8px 12px",
-            borderRadius: 999,
-            border: `1px solid ${ui.border}`,
-            background: ui.surfaceLo,
-            color: ui.text,
-            cursor: "pointer",
-          }}
-        >
-          ← Back
-        </button>
         <h2 style={{ margin: 0, fontSize: "clamp(18px, 3.2vw, 28px)" }}>{title}</h2>
       </div>
 
       {page === "xrp" && (
         <XrpPrice onBack={onBack}/>
       )}
-
-    {page === "news" && (
-      //<WallpaperPicker
-        //current={wallpaper}
-        //onChange={setWallpaper}
-        //presets={WALLPAPERS}
-      ///>
-        <Placeholder>Watchlist page content goes here.</Placeholder>
+      {page === "chao" && (
+         <ChaoGraden3D onBack={onBack}/>
       )}
       {page === "watchlist" && (
         <Placeholder>Watchlist page content goes here.</Placeholder>

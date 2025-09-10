@@ -9,11 +9,8 @@ function makeWS(provider: StreamProvider) {
   return new WebSocket("wss://ws.kraken.com");
 }
 
-export default function XrpPrice({
-  onBack, // <-- optional
-}: {
-  onBack?: () => void;
-}) {
+export default function XrpPrice({onBack}: {onBack?: () => void;}) 
+{
   const [price, setPrice] = useState<number | null>(null);
   const [status, setStatus] = useState<"idle" | "streaming" | "polling" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string>("");
