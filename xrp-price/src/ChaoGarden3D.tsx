@@ -9,10 +9,24 @@ function ChaoModel() {
 }
 export default function ChaoGarden3D({ onBack }: { onBack?: () => void }) {
   return (
-    <div style={{ height: "70vh", border: "1px solid #000000ff", borderRadius: 12 }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "70vh" }}>
       <div style={{ padding: 8, display: "flex", gap: 12, alignItems: "center" }}>
-        <button onClick={onBack}>← Back</button>
-      </div>
+        {onBack && (
+            <button
+            onClick={onBack}
+            style={{
+                padding: "8px 12px",
+                borderRadius: 999,
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: "rgba(111, 91, 91, 0.4)",
+                color: "#eee",
+                cursor: "pointer",
+            }}
+            >
+            ← Back
+            </button>
+        )}
+        </div>
 
       <Canvas
         style={{ width: "100%", height: "calc(70vh - 48px)" }}

@@ -1,7 +1,7 @@
  // App.tsx
 import { useEffect, useState } from "react";
 import XrpPrice from "./XrpPrice";
-import ChaoGraden3D from "./ChaoGarden3D";
+import ChaoGarden3D from "./ChaoGarden3D";
 import xrpImg from "./assets/xrp.png";
 import sa2Img from "./assets/sa2.png";
 
@@ -34,10 +34,10 @@ const LAST_PAGE_KEY = "last_page_v1";
 type Tile = { key: PageKey; title: string; image?: string };
 
 const TILES: Tile[] = [
-  { key: "xrp", title: "XRP", image: xrpImg }, 
+  { key: "xrp", title: "", image: xrpImg }, 
   { key: "chao", title: "", image: sa2Img},
-  { key: "watchlist", title: "3", image: "📌" },
-  { key: "settings", title: "4", image: "⚙️" },
+  { key: "watchlist", title: "", image: sa2Img },
+{ key: "settings", title: "", image: sa2Img },
 ];
 
 //home screen
@@ -200,13 +200,15 @@ function DetailPage({ page, onBack }: { page: PageKey; onBack: () => void }) {
         <XrpPrice onBack={onBack}/>
       )}
       {page === "chao" && (
-         <ChaoGraden3D onBack={onBack}/>
+         <div style={{ margin: "-28px 0px 0px 0px" }}>  
+          <ChaoGarden3D onBack={onBack} />
+         </div>
       )}
       {page === "watchlist" && (
-        <Placeholder>Watchlist page content goes here.</Placeholder>
+          <ChaoGarden3D onBack={onBack} />
       )}
       {page === "settings" && (
-        <Placeholder>Settings page content goes here.</Placeholder>
+          <ChaoGarden3D onBack={onBack} />
       )}
     </div>
   );
