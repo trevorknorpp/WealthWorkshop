@@ -4,6 +4,7 @@ import XrpPrice from "./XrpPrice";
 import ChaoGarden3D from "./ChaoGarden3D";
 import xrpImg from "./assets/xrp.png";
 import sa2Img from "./assets/sa2.png";
+import paintImg from "./assets/paint.png";
 import wallpaperImage from "./assets/wallpaperImage.png";
 
 import type { CSSProperties } from "react";
@@ -12,6 +13,7 @@ import WallpaperPicker from "./WallpaperPicker";
 import wp1 from "./assets/wallpapers/wp1.jpg";
 import wp2 from "./assets/wallpapers/wp2.jpg";
 import wp3 from "./assets/wallpapers/wp3.jpg";
+import PhotoEditor from "./assets/PhotoEditor";
 
 const WALLPAPERS: string[] = [wp1, wp2, wp3];
 const WALLPAPER_KEY = "wallpaper_v1";
@@ -29,7 +31,7 @@ const ui = {
   button: "rgba(82, 69, 69, 1)",
 };
 
-type PageKey = "home" | "xrp" | "chao" | "watchlist" | "settings";
+type PageKey = "home" | "xrp" | "chao" | "paint" | "settings";
 const LAST_PAGE_KEY = "last_page_v1";
 
 type Tile = { key: PageKey; title: string; image?: string };
@@ -37,7 +39,7 @@ type Tile = { key: PageKey; title: string; image?: string };
 const TILES: Tile[] = [
   { key: "xrp", title: "", image: xrpImg },
   { key: "chao", title: "", image: sa2Img },
-  { key: "watchlist", title: "", image: sa2Img },
+  { key: "paint", title: "", image: paintImg },
   { key: "settings", title: "", image: wallpaperImage },
 ];
 
@@ -215,8 +217,10 @@ function DetailPage({
           <ChaoGarden3D onBack={onBack} />
         </div>
       )}
-      {page === "watchlist" && (
-        <ChaoGarden3D onBack={onBack} />
+      {page === "paint" && (
+        <div style={{ padding: 16 }}>
+          <PhotoEditor imageSrc="/some/photo.jpg" />
+        </div>
       )}
       {page === "settings" && (
         <WallpaperPicker

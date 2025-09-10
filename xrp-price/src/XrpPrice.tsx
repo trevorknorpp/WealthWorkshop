@@ -256,18 +256,6 @@ export default function XrpPrice({onBack}: {onBack?: () => void;})
   }
 
   return (
-    // Viewport wrapper — centers the card both directions
-    <div
-      style={{
-        position: "fixed",            //stays locked when scrolling
-        inset: 0,                     // shorthand for "top:0 right:0 bottom:0 left:0"
-        display: "grid",              // CSS grud box
-        placeItems: "center",         // align and justify items to center
-        background: "#000000ff",    // black background on the whole page
-        zIndex: 0,                    // bottom of stacking order
-      }}
-    >
-      {/* Card/container — finite width so it's truly centered */}
       <div
         style={{
           width: "min(700px, 96vw)",                // whichever is larger, 900px or 96% of viewport width
@@ -275,10 +263,11 @@ export default function XrpPrice({onBack}: {onBack?: () => void;})
           borderRadius: 16,                         //rounded corners (not inherite)
           lineHeight: 1.5,                          //vertical spacing between lines
           fontFamily: "system-ui, Arial",           //typeface
-          color: "#ffffffff",                          //text color
+          color: "#ffffff",                          //text color
           textAlign: "center",                      //aligns texts in box center horizontally
           boxSizing: "border-box",                  //changes how width and height are calculated, includes padding and border inside width
-          background: "#000000ff",
+          background: "#00000009",
+          margin: "0 auto",
         }}
       >
         {/* Header (XRP PRICE) + Exchange*/}
@@ -489,6 +478,5 @@ export default function XrpPrice({onBack}: {onBack?: () => void;})
           </div>
         )}
       </div>
-    </div>
   );
 }
