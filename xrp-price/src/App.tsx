@@ -1,9 +1,10 @@
- // App.tsx
+// App.tsx
 import { useEffect, useState } from "react";
 import XrpPrice from "./XrpPrice";
 import ChaoGarden3D from "./ChaoGarden3D";
 import xrpImg from "./assets/xrp.png";
 import sa2Img from "./assets/sa2.png";
+import wallpaperImage from "./assets/wallpaperImage.png";
 
 import type { CSSProperties } from "react";
 
@@ -12,7 +13,7 @@ import wp1 from "./assets/wallpapers/wp1.jpg";
 import wp2 from "./assets/wallpapers/wp2.jpg";
 import wp3 from "./assets/wallpapers/wp3.jpg";
 
-const WALLPAPERS: string[] = [wp1, wp2, wp3]; 
+const WALLPAPERS: string[] = [wp1, wp2, wp3];
 const WALLPAPER_KEY = "wallpaper_v1";
 
 //general ui styled
@@ -34,10 +35,10 @@ const LAST_PAGE_KEY = "last_page_v1";
 type Tile = { key: PageKey; title: string; image?: string };
 
 const TILES: Tile[] = [
-  { key: "xrp", title: "", image: xrpImg }, 
-  { key: "chao", title: "", image: sa2Img},
+  { key: "xrp", title: "", image: xrpImg },
+  { key: "chao", title: "", image: sa2Img },
   { key: "watchlist", title: "", image: sa2Img },
-{ key: "settings", title: "", image: sa2Img },
+  { key: "settings", title: "", image: wallpaperImage },
 ];
 
 //home screen
@@ -56,15 +57,15 @@ export default function App() {
   }, [wallpaper]);
 
 
-    const wallpaperBg: CSSProperties = wallpaper
-  ? {
+  const wallpaperBg: CSSProperties = wallpaper
+    ? {
       backgroundImage: `linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,.55)), url(${wallpaper})`,
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
       backgroundAttachment: "fixed",
     }
-  : {
+    : {
       background:
         "radial-gradient(1200px 600px at 50% 10%, #1a1a1a 0%, #0b0b0b 70%)",
     };
@@ -112,7 +113,7 @@ export default function App() {
         {page === "home" ? (
           <HomeGrid onOpen={setPage} />
         ) : (
-          <DetailPage page={page} onBack={() => setPage("home")} />
+          <DetailPage page={page} onBack={() => setPage("home")} wallpaper={wallpaper} setWallpaper={setWallpaper}/>
         )}
       </div>
     </div>
@@ -178,7 +179,17 @@ function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
   );
 }
 
-function DetailPage({ page, onBack }: { page: PageKey; onBack: () => void }) {
+function DetailPage({
+  page,
+  onBack,
+  wallpaper,                   // <-- add
+  setWallpaper,                // <-- add
+}: {
+  page: PageKey;
+  onBack: () => void;
+  wallpaper: string | null;
+  setWallpaper: (src: string | null) => void;
+}) {
   const title =
     TILES.find((t) => t.key === page)?.title ??
     (page.charAt(0).toUpperCase() + page.slice(1));
@@ -197,35 +208,24 @@ function DetailPage({ page, onBack }: { page: PageKey; onBack: () => void }) {
       </div>
 
       {page === "xrp" && (
-        <XrpPrice onBack={onBack}/>
+        <XrpPrice onBack={onBack} />
       )}
       {page === "chao" && (
-         <div style={{ margin: "-28px 0px 0px 0px" }}>  
+        <div style={{ margin: "-28px 0px 0px 0px" }}>
           <ChaoGarden3D onBack={onBack} />
-         </div>
+        </div>
       )}
       {page === "watchlist" && (
-          <ChaoGarden3D onBack={onBack} />
+        <ChaoGarden3D onBack={onBack} />
       )}
       {page === "settings" && (
-          <ChaoGarden3D onBack={onBack} />
+        <WallpaperPicker
+          current={wallpaper}
+          onChange={setWallpaper}
+          presets={WALLPAPERS}
+          onBack={onBack}
+        />
       )}
-    </div>
-  );
-}
-
-function Placeholder({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        padding: 24,
-        borderRadius: 12,
-        border: `1px solid ${ui.border}`,
-        background: ui.surfaceLo,
-        color: ui.text,
-      }}
-    >
-      {children}
     </div>
   );
 }
