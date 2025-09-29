@@ -7,8 +7,33 @@ import {
   KeyboardControls,
   useKeyboardControls,
 } from "@react-three/drei";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+
+
+function VerticalMover({ speed = 3, min = -Infinity, max = Infinity }) {
+  const { camera } = useThree();
+  const [, get] = useKeyboardControls();
+  const yRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    yRef.current = camera.position.y; // start from current height
+  }, [camera]);
+
+  useFrame((_, dt) => {
+    if (yRef.current == null) yRef.current = camera.position.y;
+
+    const { up, down } = get();
+    const dir = (up ? 1 : 0) - (down ? 1 : 0);
+    if (dir !== 0) {
+      yRef.current = Math.min(max, Math.max(min, yRef.current + dir * speed * dt));
+    }
+    // Reapply our authoritative Y every frame so other systems can't reset it
+    camera.position.y = yRef.current;
+  });
+
+  return null;
+}
 
 function ChaoModel() {
   const { scene } = useGLTF("/chaoGarden.glb");
@@ -155,13 +180,16 @@ export default function ChaoGarden3D({ onBack }: { onBack?: () => void }) {
             { name: "backward", keys: ["KeyS", "ArrowDown"] },
             { name: "left", keys: ["KeyA", "ArrowLeft"] },
             { name: "right", keys: ["KeyD", "ArrowRight"] },
-            { name: "sprint", keys: ["ShiftLeft", "ShiftRight"] },
+            { name: "sprint", keys: ["ShiftLeft", "ShiftRight"] },   // keep if you want sprint
+            { name: "up", keys: ["Space"] },                          // NEW
+            { name: "down", keys: ["ShiftLeft", "ShiftRight"] },  // NEW (or use KeyE/KeyQ)
           ]}
         >
           <FpsMover speed={4.5} />
-          <PointerLockControls /> {/* mouse = look only */}
+          <VerticalMover speed={3} />   {/* NEW */}
+          <PointerLockControls />
         </KeyboardControls>
-      </Canvas>
-    </div>
-  );
-}
+            </Canvas>
+          </div>
+        );
+      }
