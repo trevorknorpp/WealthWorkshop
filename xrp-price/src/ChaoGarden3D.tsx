@@ -1,15 +1,16 @@
-// src/ChaoGarden3D.tsx
+//react 3D fiber library - 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+
 import {
-  useGLTF,
+  useGLTF, //load in 3D map
   Html,
   PointerLockControls,
   KeyboardControls,
   useKeyboardControls,
 } from "@react-three/drei";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-
 
 function VerticalMover({ speed = 3, min = -Infinity, max = Infinity }) {
   const { camera } = useThree();
@@ -155,9 +156,6 @@ export default function ChaoGarden3D({ onBack }: { onBack?: () => void }) {
             ← Back
           </button>
         )}
-        <span style={{ color: "#bbb", fontSize: 12 }}>
-          Click canvas to lock cursor · WASD to move · Shift to sprint · Esc to unlock
-        </span>
       </div>
 
       <Canvas style={{ width: "100%", height: "calc(70vh - 48px)" }} camera={{ position: [3, 1.7, 5], fov: 75 }}>
@@ -189,7 +187,7 @@ export default function ChaoGarden3D({ onBack }: { onBack?: () => void }) {
           <VerticalMover speed={3} />   {/* NEW */}
           <PointerLockControls />
         </KeyboardControls>
-            </Canvas>
-          </div>
-        );
-      }
+      </Canvas>
+    </div>
+  );
+}

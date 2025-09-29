@@ -1,5 +1,6 @@
 // PhotoEditor.tsx
 import React, { useEffect, useRef, useState } from "react";
+import BackSection from "./BackSection"; // adjust path as needed
 
 type Tool = "brush" | "eraser" | "pan";
 
@@ -232,7 +233,14 @@ export default function PhotoEditor({
   }
 
   return (
+    
     <div style={{ display: "grid", gap: 8 }}>
+
+      <div>
+        <BackSection /> 
+      </div>
+
+      <h1>Photo Editor</h1>
       {/* Toolbar */}
       <div style={{ display: "flex", gap: 8, alignItems: "center", color: "#eee" }}>
         <strong>Tool:</strong>

@@ -6,6 +6,7 @@ import xrpImg from "./assets/xrp.png";
 import sa2Img from "./assets/sa2.png";
 import paintImg from "./assets/paint.png";
 import wallpaperImage from "./assets/wallpaperImage.png";
+import ytImage from "./assets/yt.png";
 
 import type { CSSProperties } from "react";
 
@@ -14,7 +15,7 @@ import VideoPlayer from "./VideoPlayer";
 import wp1 from "./assets/wallpapers/wp1.jpg";
 import wp2 from "./assets/wallpapers/wp2.jpg";
 import wp3 from "./assets/wallpapers/wp3.jpg";
-import PhotoEditor from "./assets/PhotoEditor";
+import PhotoEditor from "./PhotoEditor";
 
 const WALLPAPERS: string[] = [wp1, wp2, wp3];
 const WALLPAPER_KEY = "wallpaper_v1";
@@ -43,7 +44,7 @@ const TILES: Tile[] = [
   { key: "chao", title: "", image: sa2Img },
   { key: "paint", title: "", image: paintImg },
   { key: "settings", title: "", image: wallpaperImage },
-  { key: "video", title: "", image: wallpaperImage }, // <-- new
+  { key: "video", title: "", image: ytImage }, // <-- new
 ];
 
 //home screen
