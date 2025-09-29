@@ -10,6 +10,7 @@ import wallpaperImage from "./assets/wallpaperImage.png";
 import type { CSSProperties } from "react";
 
 import WallpaperPicker from "./WallpaperPicker";
+import VideoPlayer from "./VideoPlayer";
 import wp1 from "./assets/wallpapers/wp1.jpg";
 import wp2 from "./assets/wallpapers/wp2.jpg";
 import wp3 from "./assets/wallpapers/wp3.jpg";
@@ -31,7 +32,8 @@ const ui = {
   button: "rgba(82, 69, 69, 1)",
 };
 
-type PageKey = "home" | "xrp" | "chao" | "paint" | "settings";
+type PageKey = "home" | "xrp" | "chao" | "paint" | "settings" | "video";
+
 const LAST_PAGE_KEY = "last_page_v1";
 
 type Tile = { key: PageKey; title: string; image?: string };
@@ -41,6 +43,7 @@ const TILES: Tile[] = [
   { key: "chao", title: "", image: sa2Img },
   { key: "paint", title: "", image: paintImg },
   { key: "settings", title: "", image: wallpaperImage },
+  { key: "video", title: "", image: wallpaperImage }, // <-- new
 ];
 
 //home screen
@@ -208,6 +211,12 @@ function DetailPage({
       >
         <h2 style={{ margin: 0, fontSize: "clamp(18px, 3.2vw, 28px)" }}>{title}</h2>
       </div>
+
+      {page === "video" && (
+        <div style={{ padding: 8 }}>
+          <VideoPlayer onBack={onBack} />
+        </div>
+      )}
 
       {page === "xrp" && (
         <XrpPrice onBack={onBack} />
