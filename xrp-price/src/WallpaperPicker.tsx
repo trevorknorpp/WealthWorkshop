@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function WallpaperPicker({
   current,
@@ -11,8 +11,6 @@ export default function WallpaperPicker({
   presets?: string[];
   onBack?: () => void;
 }) {
-  // If you ever switch to object URLs instead of data URLs, you'll use this.
-  const lastObjectUrl = useRef<string | null>(null);
 
   // Local "preview" selection. Starts with the current wallpaper.
   const [preview, setPreview] = useState<string | null>(current);
@@ -58,18 +56,14 @@ export default function WallpaperPicker({
   return (
     <div
       style={{
-        border: "1px solid rgba(255,255,255,.12)",
-        borderRadius: 12,
-        padding: 16,
         background: "rgba(0,0,0,.25)",
+        marginTop: '-25px',
       }}
       onKeyDown={(e) => {
         if (e.key === "Escape" && onBack) onBack();
       }}
     >
-      {/* Header / Actions */}
-      <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center" }}>
-        {onBack && (
+      {onBack && (
           <button
             onClick={onBack}
             style={{
@@ -85,6 +79,10 @@ export default function WallpaperPicker({
             ← Back
           </button>
         )}
+
+      {/* Header / Actions */}
+      <div style={{ marginBottom: 12, display: "flex", gap: 8, alignItems: "center" }}>
+        
 
         <div style={{ fontWeight: 600, color: "#eee" }}>Choose a wallpaper</div>
 

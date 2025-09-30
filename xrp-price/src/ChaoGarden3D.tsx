@@ -38,7 +38,7 @@ function VerticalMover({ speed = 3, min = -Infinity, max = Infinity }) {
 
 function ChaoModel() {
   const { scene } = useGLTF("/chaoGarden.glb");
-  return <primitive object={scene} scale={1} />;
+  return <primitive object={scene} scale={2} />;
 }
 
 /** A 3D "screen" with a live YouTube player (iframe projected into 3D). */
@@ -158,10 +158,13 @@ export default function ChaoGarden3D({ onBack }: { onBack?: () => void }) {
         )}
       </div>
 
+     {/* the canvas is the root container that sets up the WebGL rending context*/}
+     {/* without Canvas, nothing 2D will appear */}
       <Canvas style={{ width: "100%", height: "calc(70vh - 48px)" }} camera={{ position: [3, 1.7, 5], fov: 75 }}>
         <ambientLight intensity={0.8} />
         <directionalLight position={[5, 5, 5]} intensity={0.8} />
 
+        {/*actual map GLTF file*/}
         <ChaoModel />
 
         <YouTubeBillboard

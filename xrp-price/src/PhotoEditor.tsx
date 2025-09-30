@@ -233,14 +233,10 @@ export default function PhotoEditor({
   }
 
   return (
-    
     <div style={{ display: "grid", gap: 8 }}>
+      
+      <BackSection /> 
 
-      <div>
-        <BackSection /> 
-      </div>
-
-      <h1>Photo Editor</h1>
       {/* Toolbar */}
       <div style={{ display: "flex", gap: 8, alignItems: "center", color: "#eee" }}>
         <strong>Tool:</strong>
@@ -249,9 +245,6 @@ export default function PhotoEditor({
         </button>
         <button onClick={() => setTool("eraser")} aria-pressed={tool === "eraser"}>
           🧽 Eraser
-        </button>
-        <button onClick={() => setTool("pan")} aria-pressed={tool === "pan"}>
-          ✋ Pan
         </button>
 
         <label style={{ marginLeft: 12 }}>
