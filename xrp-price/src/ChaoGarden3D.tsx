@@ -1,109 +1,76 @@
-//react 3D fiber library - 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-
-import {
-  useGLTF, //load in 3D map
-  Html,
-  PointerLockControls,
-  KeyboardControls,
-  useKeyboardControls,
-} from "@react-three/drei";
-
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useGLTF, Html, PointerLockControls, KeyboardControls, Sky, Environment, ContactShadows} from "@react-three/drei";
+import { useCallback, useRef, useState, useLayoutEffect} from "react";
+import { BoundaryControl, WASDMover, VerticalMover, CursorHoldUnlock} from "./ChaoGarden/SonicController"
 import * as THREE from "three";
+import { EffectComposer, Bloom, SSAO, Vignette } from "@react-three/postprocessing";
 
-
-function VerticalMover({ speed = 3, min = -Infinity, max = Infinity }) {
-  const { camera } = useThree();
-  const [, get] = useKeyboardControls();
-
-  useFrame((_, dt) => {
-    const { up, down } = get();
-    const dir = (up ? 1 : 0) - (down ? 1 : 0);
-
-    if (dir !== 0) {
-      let newY = camera.position.y + dir * speed * dt;
-      // clamp to min/max
-      newY = Math.min(max, Math.max(min, newY));
-      camera.position.y = newY;
-    }
-  });
-
-  return null;
-}
-
-// teleport player back if out of bounds
-function BoundaryControl() {
-  const { camera } = useThree();
-  const p = camera.position;
-
-  //use new data
-  useFrame(() => {
-  
-  //if on higher part of grass
-  if (p.z > 2 && p.z < 7){
-    if (p.y < 0.5) {
-      p.y = 2
-    }
-  }
-
-  //if on lower part of grass
-  else {
-    if (p.y < 0) {
-      p.y = 1
-    }
-  }
-  
-  if (p.x > 7 || p.x < -13) {
-    p.x = 1
-  }
-  if (p.z > 15 || p.z < -8) {
-    p.z = 1
-  }
-  });
-
-  return null;
-}
-
-function ChaoModel() {
+function LoadChaoGarden() {
   const { scene } = useGLTF("/chaoGarden.glb");
+
+  // Runs before the first paint — prevents "flash" of wrong materials
+  useLayoutEffect(() => {
+    scene.traverse((o: any) => {
+      if (!o.isMesh) return;
+
+      o.castShadow = true;
+      o.receiveShadow = true;
+
+      const m = o.material;
+      if (m?.map) {
+        m.map.colorSpace = THREE.SRGBColorSpace;
+        m.map.anisotropy = 8;
+        m.map.generateMipmaps = true;
+        m.map.minFilter = THREE.LinearMipmapLinearFilter;
+        m.map.magFilter = THREE.LinearFilter;
+
+        // Optional: improve big grassy areas
+        if (/grass|ground|terrain/i.test(o.name)) {
+          m.map.wrapS = m.map.wrapT = THREE.RepeatWrapping;
+          m.map.repeat.set(2, 2);
+        }
+      }
+
+      // Optional: make ponds read as water
+      if (/water|pond|lake/i.test(o.name)) {
+        m.roughness = 0.15;
+        m.metalness = 0.0;
+        m.transparent = true;
+        m.opacity = 0.95;
+        m.color = new THREE.Color("#6db9ff");
+      }
+    });
+  }, [scene]);
+
   return <primitive object={scene} scale={2} />;
 }
-
 /** A 3D "screen" with a live YouTube player (iframe projected into 3D). */
 function YouTubeBillboard({
-  videoId = "dQw4w9WgXcQ",
-  size = [1.6, 0.9] as [number, number],
+  videoId = "lcxNwdZlQT8",
+  size = [1.6, 0.9] as [number, number],          // meters (16:9)
   position = [0, 1.1, -2] as [number, number, number],
   rotation = [0, 0, 0] as [number, number, number],
 }) {
-  const [hover, setHover] = useState(false);
-  const stop = useCallback((e: any) => e.stopPropagation(), []);
-
   const [w, h] = size;
-  const pxWidth = 800;
-  const pxHeight = Math.round((pxWidth * h) / w);
+
+  // pick any 16:9 pixel size; 1280x720 keeps YouTube happy
+  const pxWidth = 1280;
+  const pxHeight = 720;
+
+  // This makes the DOM element appear exactly w meters wide in world space
+  const distanceFactor = w / (pxWidth / 100);
 
   return (
     <group position={position} rotation={rotation}>
-      <mesh
-        onPointerDown={stop}
-        onPointerMove={stop}
-        onPointerOver={() => setHover(true)}
-        onPointerOut={() => setHover(false)}
-      >
-        <planeGeometry args={[w, h]} />
-        <meshStandardMaterial color={hover ? "#222" : "#111"} roughness={0.9} metalness={0.1} />
-      </mesh>
+      {/* 🔴 NO MESH HERE — remove the black plane completely */}
 
       <Html
         transform
-        occlude
-        distanceFactor={w / (pxWidth / 100)}
+        position={[0, 0, 0.001]}       // a hair in front of any geometry
+        distanceFactor={distanceFactor}
         pointerEvents="auto"
-        zIndexRange={[10, 0]}
-        onPointerDown={stop}
-        onWheel={stop}
+        zIndexRange={[200, 100]}
+        occlude={false}                 // don’t let geometry hide it
       >
         <div
           style={{
@@ -111,22 +78,19 @@ function YouTubeBillboard({
             height: pxHeight,
             borderRadius: 12,
             overflow: "hidden",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "transparent",  // transparent container
+            border: "none",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
           }}
-          onMouseDown={stop}
-          onMouseUp={stop}
-          onPointerDown={stop}
         >
           <iframe
             width={pxWidth}
             height={pxHeight}
-            src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
+            src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&controls=1&playsinline=1`}
             title="YouTube video player"
-            frameBorder={0}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
-            style={{ display: "block" }}
+            style={{ display: "block", border: 0, background: "transparent" }}
           />
         </div>
       </Html>
@@ -134,44 +98,6 @@ function YouTubeBillboard({
   );
 }
 
-function WASDMover({ speed = 4 }: { speed?: number }) {
-  //grab le camera
-  const { camera } = useThree();
-
-  //get keyboard state
-  const [, get] = useKeyboardControls();
-
-  //y of camera, null by default
-  const baseY = useRef<number | null>(null);
-
-  useFrame((_, dt) => {
-    if (baseY.current === null) baseY.current = camera.position.y;
-
-    const { forward, backward, left, right, sprint } = get();
-    const s = (sprint ? 1.8 : 1) * speed * dt;
-
-    // forward/right vectors from camera orientation (flattened)
-    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    const rightV = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-    fwd.y = 0; 
-    rightV.y = 0; 
-    fwd.normalize(); 
-    rightV.normalize();
-
-    const move = new THREE.Vector3();
-    if (forward) move.add(fwd);
-    if (backward) move.sub(fwd);
-    if (right) move.add(rightV);
-    if (left) move.sub(rightV);
-    if (move.lengthSq() > 0) move.normalize().multiplyScalar(s);
-
-    camera.position.add(move);
-
-    // lock vertical unless you add jump
-  });
-
-  return null;
-}
 
 function CameraHUD({ enabled }: { enabled: boolean }) {
   const { camera } = useThree(); 
@@ -212,6 +138,7 @@ function CameraHUD({ enabled }: { enabled: boolean }) {
 export default function ChaoGarden3D({ onBack }: { onBack?: () => void }) {
   
 const [devMode, setDevMode] = useState(true); //useState false for normally off
+const plcRef = useRef<any>(null); // 👈 pointer-lock controls ref
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "70vh" }}>
@@ -245,20 +172,63 @@ const [devMode, setDevMode] = useState(true); //useState false for normally off
 
      {/* the canvas is the root container that sets up the WebGL rending context*/}
      {/* without Canvas, nothing 2D will appear */}
-      <Canvas style={{ width: "100%", height: "calc(70vh - 48px)" }} camera={{ position: [3, 1.7, 5], fov: 75 }}>
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[5, 5, 5]} intensity={0.8} />
+      
+      <Canvas
+        shadows
+        dpr={[1, 2]}
+        camera={{ position: [0, 1.35, 6], fov: 50 }}
+        gl={{
+          antialias: true,
+          outputColorSpace: THREE.SRGBColorSpace,
+          toneMapping: THREE.ACESFilmicToneMapping,
+        }}
+        style={{ width: "100%", height: "calc(70vh - 48px)" }}
+      >
+
+        {/* bright sky + soft distance fade */}
+        <color attach="background" args={["#aee1ff"]} />
+        <fog attach="fog" args={["#aee1ff", 12, 80]} />
+        <hemisphereLight intensity={0.5} color="#ffffff" groundColor="#7ec850" />
+        <directionalLight
+          position={[8, 12, 4]}
+          intensity={1}
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-bias={-0.0005}
+          shadow-camera-near={1}
+          shadow-camera-far={60}
+          shadow-camera-left={-25}
+          shadow-camera-right={25}
+          shadow-camera-top={25}
+          shadow-camera-bottom={-25}
+        />
+
+        <ContactShadows position={[0, 0.01, 0]} opacity={0.35} scale={80} blur={2.5} far={50} />
+
+        <Sky distance={450000} sunPosition={[8, 12, 4]} turbidity={2} mieCoefficient={0.01} mieDirectionalG={0.9} />
+        <Environment preset="sunset" />
+
 
         {/*actual map GLTF file*/}
-        <ChaoModel />
+        <LoadChaoGarden />
+
 
         {/*youtube player in map*/}
         <YouTubeBillboard
-          videoId="bTqVqk7FSmY"
-          position={[0, 1.0, -2.0]}
+          videoId="lcxNwdZlQT8"
+          position={[-3,5,8]}
           rotation={[0, Math.PI * 0.1, 0]}
-          size={[1.6, 0.9]}
+          size={[3.2, 1.8]}
         />
+
+        {/*youtube player in map*/}
+        <YouTubeSphere
+          videoId="lcxNwdZlQT8"
+          position={[-5,8,8]}
+          radius={3.2}
+        />
+
 
         {/* controls */}
         <KeyboardControls
@@ -270,11 +240,14 @@ const [devMode, setDevMode] = useState(true); //useState false for normally off
             { name: "sprint", keys: ["ShiftLeft", "ShiftRight"] },   // keep if you want sprint
             { name: "up", keys: ["Space"] },                          // NEW
             { name: "down", keys: ["ShiftLeft", "ShiftRight"] },  // NEW (or use KeyE/KeyQ)
+            { name: "cursor", keys: ["KeyQ"] },                       // 👈 HOLD Q to show cursor
+
           ]}
         >
           <WASDMover speed={4.5} />
           <VerticalMover speed={3} />   
-          <PointerLockControls />
+          <PointerLockControls ref={plcRef}/>
+          <CursorHoldUnlock controlsRef={plcRef} />
           <BoundaryControl/>
         </KeyboardControls>
         
@@ -283,5 +256,56 @@ const [devMode, setDevMode] = useState(true); //useState false for normally off
 
       </Canvas>
     </div>
+  );
+}
+
+function YouTubeSphere({
+  videoId = "lcxNwdZlQT8",
+  radius = 1,
+  position = [0, 1.5, -3] as [number, number, number],
+}) {
+  const pxWidth = 1280;
+  const pxHeight = 720;
+
+  return (
+    <group position={position}>
+      {/* Sphere shell (invisible, just for placement) */}
+      <mesh>
+        <sphereGeometry args={[radius, 32, 32]} />
+        <meshBasicMaterial transparent opacity={0} /> {/* invisible shell */}
+      </mesh>
+
+      {/* Html iframe anchored to front of sphere */}
+      <Html
+        transform
+        position={[0, 0, radius + 0.01]}  // offset just outside sphere surface
+        distanceFactor={radius / 2}       // scale iframe to fit sphere
+        occlude={false}
+        pointerEvents="auto"
+        zIndexRange={[200, 100]}
+      >
+        <div
+          style={{
+            width: pxWidth,
+            height: pxHeight,
+            borderRadius: "50%",        // circular mask
+            overflow: "hidden",
+            background: "transparent",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+          }}
+        >
+          <iframe
+            width={pxWidth}
+            height={pxHeight}
+            src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1`}
+            title="YouTube video player"
+            frameBorder={0}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            style={{ display: "block", border: 0, background: "transparent" }}
+          />
+        </div>
+      </Html>
+    </group>
   );
 }
