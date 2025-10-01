@@ -286,8 +286,8 @@ export default function XrpPrice({onBack}: {onBack?: () => void;})
               style={{
                 padding: "8px 12px",
                 borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.2)",
-                background: "rgba(111, 91, 91, 0.4)",
+                border: "1px solid rgba(255,255,255,0.7)",
+                background: "rgba(111, 91, 91, 0.7)",
                 color: "#eee",
                 cursor: "pointer",
               }}

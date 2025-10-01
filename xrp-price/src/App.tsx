@@ -80,6 +80,7 @@ export default function App() {
     // else localStorage.setItem(LAST_PAGE_KEY, page);
   }, [page]);
 
+  const isXrp = page === "xrp";  // ✅ only shrink/tint for XRP
 
   return (
     <div
@@ -100,13 +101,27 @@ export default function App() {
       {/* Main content box */}
       <div
         style={{
-          marginTop: 16, // spacing between YT button and box
-          width: "min(1000px, 96vw)",
-          padding: "clamp(16px, 3vw, 32px)",
+          marginTop: 16,
+          width: page === "xrp" ? "min(720px, 96vw)" : "min(1000px, 96vw)",
+
+          // tighter padding for xrp
+          padding: page === "xrp" ? "16px 20px" : "clamp(16px, 3vw, 32px)",
+
           borderRadius: ui.radius,
-          background: ui.surface,
-          border: `1px solid ${ui.border}`,
-          boxShadow: "0 8px 40px rgba(0,0,0,.45)",
+
+          // ✅ key difference: xrp uses translucent + blur, others stay solid
+          background: page === "xrp"
+            ? "rgba(8,10,14,0.36)"   // see-through glass for XRP only
+            : ui.surface,
+
+          border: page === "xrp" ? "none" : `1px solid ${ui.border}`,
+
+          backdropFilter: page === "xrp" ? "saturate(120%) blur(8px)" : undefined,
+
+          boxShadow: page === "xrp"
+            ? "0 8px 28px rgba(255, 255, 255, 0)"
+            : "0 8px 40px rgba(0,0,0,.45)",
+
           boxSizing: "border-box",
         }}
       >
@@ -224,16 +239,9 @@ function DetailPage({
   wallpaper: string | null;
   setWallpaper: (src: string | null) => void;
 }) {
-  const title =
-    (TILES.find((t) => t.key === page)?.title ??
-      page.charAt(0).toUpperCase() + page.slice(1)) || "";
 
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <h2 style={{ margin: 0, fontSize: "clamp(18px, 3.2vw, 28px)" }}>{title}</h2>
-      </div>
-
       {page === "video" && (
         <div style={{ padding: 8 }}>
           <VideoPlayer onBack={onBack} />
@@ -248,7 +256,7 @@ function DetailPage({
       )}
       {page === "paint" && (
         <div style={{ padding: 16 }}>
-          <PhotoEditor imageSrc="/some/photo.jpg" />
+          <PhotoEditor imageSrc="/some/photo.jpg" onBack={onBack}/>
         </div>
       )}
       {page === "settings" && (

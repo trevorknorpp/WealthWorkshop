@@ -1,5 +1,6 @@
 // ---- HistoryChart.tsx (or inline above your component) ----
 import { useEffect, useMemo, useRef, useState } from "react";
+import { specularF90 } from "three/tsl";
 
 type RangeKey = "1D" | "7D" | "30D" | "90D" | "1Y";
 const RANGE_TO_DAYS: Record<RangeKey, number> = {
@@ -136,22 +137,29 @@ export function HistoryChart({
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
-  function onMove(e: React.MouseEvent<SVGSVGElement>) {
-    if (!svgRef.current || !data.length) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    // find nearest point by x (binary search would be ideal; linear is fine for small N)
-    let nearest = 0;
-    let best = Infinity;
-    for (let i = 0; i < data.length; i++) {
-      const dx = Math.abs(px - xAtIndex(i));
-      if (dx < best) {
-        best = dx;
-        nearest = i;
-      }
+function onMove(e: React.MouseEvent<SVGSVGElement>) {
+  if (!svgRef.current || !data.length) return;
+  const rect = svgRef.current.getBoundingClientRect();
+
+  // mouse X in CSS px relative to the SVG
+  const pxCss = e.clientX - rect.left;
+
+  // ✅ convert to viewBox units (0..W) so it matches xAtIndex()
+  const pxView = (pxCss / rect.width) * W;
+
+  // find nearest point in the same coordinate space
+  let nearest = 0;
+  let best = Infinity;
+  for (let i = 0; i < data.length; i++) {
+    const dx = Math.abs(pxView - xAtIndex(i)); // both in viewBox units
+    if (dx < best) {
+      best = dx;
+      nearest = i;
     }
-    setHoverIdx(nearest);
   }
+  setHoverIdx(nearest);
+}
+  
   function onLeave() {
     setHoverIdx(null);
   }
@@ -173,7 +181,7 @@ export function HistoryChart({
     return d.toLocaleString(undefined, opts);
   };
 
-    return (
+  return (
     <div style={{ width: "100%", marginTop: 12 }}>
       {/* Chart */}
       <div style={{ width: "100%", marginTop: 6 }}>
@@ -195,7 +203,7 @@ export function HistoryChart({
               ...(square ? { aspectRatio: "1 / 1" } : { height }), // responsive square
               borderRadius: 12,
               border: minimal ? "1px solid rgba(255,255,255,.08)" : "none",
-              background: minimal ? "transparent" : "#2a2a2a",
+              background: "transparent",
               boxShadow: minimal ? "none" : "inset 0 0 0 1px rgba(0,0,0,.2)",
             }}
           >

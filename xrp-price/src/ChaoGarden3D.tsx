@@ -142,15 +142,15 @@ const plcRef = useRef<any>(null); // 👈 pointer-lock controls ref
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "70vh" }}>
-      <div style={{ padding: 8, display: "flex", gap: 12, alignItems: "center" }}>
+      <div style={{ padding: 15, display: "flex", gap: 12, alignItems: "center" }}>
         {onBack && (
           <button
             onClick={onBack}
             style={{
               padding: "8px 12px",
               borderRadius: 999,
-              border: "1px solid rgba(255,255,255,0.2)",
-              background: "rgba(111, 91, 91, 0.4)",
+              border: "1px solid rgba(58, 54, 54, 1)",
+              background: "rgba(0, 0, 0, 0)",
               color: "#eee",
               cursor: "pointer",
             }}

@@ -1,6 +1,66 @@
 // PhotoEditor.tsx
 import React, { useEffect, useRef, useState } from "react";
-import BackSection from "./BackSection"; // adjust path as needed
+import BackButton from "./Backbutton";
+
+const ui = {
+  text: "#e6e6e6",
+  sub: "#a8a8a8",
+  border: "rgba(255,255,255,0.10)",
+  chipBg: "rgba(255,255,255,0.03)",
+  panel: "rgba(0,0,0,0.35)",
+};
+
+const styles = {
+  toolbar: {
+    display: "flex",
+    flexWrap: "wrap" as const,
+    alignItems: "center",
+    gap: 12,
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: ui.panel,
+    border: `1px solid ${ui.border}`,
+    backdropFilter: "blur(6px)",
+    color: ui.text,
+  },
+  group: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "6px 8px",
+    borderRadius: 10,
+    background: ui.chipBg,
+    border: `1px solid ${ui.border}`,
+  },
+  label: { margin: 0, fontSize: 12, color: ui.sub },
+  btn: {
+    height: 28,
+    padding: "0 10px",
+    borderRadius: 8,
+    background: "#191919",
+    border: `1px solid ${ui.border}`,
+    color: ui.text,
+    cursor: "pointer",
+  },
+  btnActive: {
+    background: "#242424",
+    boxShadow: "0 0 0 2px rgba(255,255,255,0.06) inset",
+  },
+  color: {
+    width: 36,
+    height: 24,
+    padding: 0,
+    border: `1px solid ${ui.border}`,
+    borderRadius: 6,
+    background: "#111",
+  },
+  range: {
+    width: 160,
+    height: 24,
+    accentColor: "#ff2f6d",
+  },
+  num: { width: 28, textAlign: "right" as const, color: ui.sub, fontSize: 12 },
+};
 
 type Tool = "brush" | "eraser" | "pan";
 
@@ -8,10 +68,12 @@ export default function PhotoEditor({
   imageSrc,
   width = 900,
   height = 600,
+  onBack,
 }: {
   imageSrc?: string;   // optional initial image
   width?: number;
   height?: number;
+  onBack?:() => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null); // holds the base photo
@@ -233,60 +295,96 @@ export default function PhotoEditor({
   }
 
   return (
-    <div style={{ display: "grid", gap: 8 }}>
-      
-      <BackSection /> 
+  <div style={{ display: "grid"}}>
 
+    <div style={{ marginTop: - 20 }}>
+        {onBack && <BackButton onClick={onBack} />}   {/* 🔥 call the prop */}
+    </div>
+    
       {/* Toolbar */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", color: "#eee" }}>
-        <strong>Tool:</strong>
-        <button onClick={() => setTool("brush")} aria-pressed={tool === "brush"}>
-          🖌️ Brush
-        </button>
-        <button onClick={() => setTool("eraser")} aria-pressed={tool === "eraser"}>
-          🧽 Eraser
-        </button>
+      <div style={styles.toolbar}>
+        <div style={styles.group}>
+          <span style={styles.label}>Tool</span>
+          <button
+            onClick={() => setTool("brush")}
+            aria-pressed={tool === "brush"}
+            style={{ ...styles.btn, ...(tool === "brush" ? styles.btnActive : {}) }}
+          >
+            🖌️ Brush
+          </button>
+          <button
+            onClick={() => setTool("eraser")}
+            aria-pressed={tool === "eraser"}
+            style={{ ...styles.btn, ...(tool === "eraser" ? styles.btnActive : {}) }}
+          >
+            🧽 Eraser
+          </button>
+          <button
+            onClick={() => setTool("pan")}
+            aria-pressed={tool === "pan"}
+            style={{ ...styles.btn, ...(tool === "pan" ? styles.btnActive : {}) }}
+          >
+            ✋ Pan
+          </button>
+        </div>
 
-        <label style={{ marginLeft: 12 }}>
-          Color <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
-        </label>
-        <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          Size
+        <div style={styles.group}>
+          <span style={styles.label}>Color</span>
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            style={styles.color}
+          />
+        </div>
+
+        <div style={styles.group}>
+          <span style={styles.label}>Size</span>
           <input
             type="range"
             min={1}
             max={64}
             value={size}
             onChange={(e) => setSize(Number(e.target.value))}
+            style={styles.range}
           />
-          <span style={{ width: 28, textAlign: "right" }}>{size}</span>
-        </label>
+          <span style={styles.num}>{size}</span>
+        </div>
 
-        <button onClick={() => undo()} disabled={!canUndo}>Undo</button>
-        <button
-          onClick={() => {
-            imgRef.current = null;
-            clearCanvas();
-            pushHistory();
-          }}
-        >
-          Clear
-        </button>
-
-        <label style={{ marginLeft: "auto" }}>
-          Load
-          <input
-            type="file"
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) loadFromFile(f);
+        <div style={styles.group}>
+          <button onClick={undo} disabled={!canUndo} style={styles.btn}>Undo</button>
+          <button
+            onClick={() => {
+              imgRef.current = null;
+              clearCanvas();
+              pushHistory();
             }}
-          />
-        </label>
-        <button onClick={exportPNG}>Export PNG</button>
+            style={styles.btn}
+          >
+            Clear
+          </button>
+        </div>
+
+        {/* spacer pushes file/export to the right */}
+        <div style={{ flex: 1 }} />
+
+        <div style={styles.group}>
+          <label style={{ ...styles.btn, display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+            Load
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) loadFromFile(f);
+              }}
+            />
+          </label>
+          <button onClick={exportPNG} style={styles.btn}>Export PNG</button>
+        </div>
       </div>
+
 
       {/* Canvas */}
       <div

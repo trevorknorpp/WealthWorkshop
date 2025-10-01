@@ -57,7 +57,6 @@ export default function WallpaperPicker({
     <div
       style={{
         background: "rgba(0,0,0,.25)",
-        marginTop: '-25px',
       }}
       onKeyDown={(e) => {
         if (e.key === "Escape" && onBack) onBack();
