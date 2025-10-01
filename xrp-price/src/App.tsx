@@ -1,5 +1,5 @@
 // App.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import XrpPrice from "./XrpPrice";
 import ChaoGarden3D from "./ChaoGarden3D";
 import xrpImg from "./assets/xrp.png";
@@ -7,8 +7,6 @@ import sa2Img from "./assets/sa2.png";
 import paintImg from "./assets/paint.png";
 import wallpaperImage from "./assets/wallpaperImage.png";
 import ytImage from "./assets/yt.png";
-
-import type { CSSProperties } from "react";
 
 import WallpaperPicker from "./WallpaperPicker";
 import VideoPlayer from "./VideoPlayer";
@@ -20,7 +18,6 @@ import PhotoEditor from "./PhotoEditor";
 const WALLPAPERS: string[] = [wp1, wp2, wp3];
 const WALLPAPER_KEY = "wallpaper_v1";
 
-//general ui styled
 const ui = {
   brand: "#000000ff",
   surface: "#000000ff",
@@ -34,79 +31,76 @@ const ui = {
 };
 
 type PageKey = "home" | "xrp" | "chao" | "paint" | "settings" | "video";
-
 const LAST_PAGE_KEY = "last_page_v1";
 
-type Tile = { key: PageKey; title: string; image?: string };
+type Tile = { key: Exclude<PageKey, "home" | "video">; title: string; image?: string };
 
+// ⬇️ YouTube removed from the grid
 const TILES: Tile[] = [
   { key: "xrp", title: "", image: xrpImg },
   { key: "chao", title: "", image: sa2Img },
   { key: "paint", title: "", image: paintImg },
   { key: "settings", title: "", image: wallpaperImage },
-  { key: "video", title: "", image: ytImage }, // <-- new
 ];
 
-//home screen
 export default function App() {
   const [page, setPage] = useState<PageKey>("home");
-
-  // persisted wallpaper (string | null) – can be URL, data: URI, or import
-  const [wallpaper, setWallpaper] = useState<string | null>(
-    () => localStorage.getItem(WALLPAPER_KEY)
+  const [wallpaper, setWallpaper] = useState<string | null>(() =>
+    localStorage.getItem(WALLPAPER_KEY)
   );
 
-  //when wallpaper is updated, store update in local
   useEffect(() => {
     if (wallpaper) localStorage.setItem(WALLPAPER_KEY, wallpaper);
     else localStorage.removeItem(WALLPAPER_KEY);
   }, [wallpaper]);
 
-
   const wallpaperBg: CSSProperties = wallpaper
     ? {
-      backgroundImage: `linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,.55)), url(${wallpaper})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundRepeat: "no-repeat",
-      backgroundAttachment: "fixed",
-    }
+        backgroundImage: `linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,.55)), url(${wallpaper})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
+      }
     : {
-      background:
-        "radial-gradient(1200px 600px at 50% 10%, #1a1a1a 0%, #0b0b0b 70%)",
-    };
+        background: "radial-gradient(1200px 600px at 50% 10%, #1a1a1a 0%, #0b0b0b 70%)",
+      };
 
-  // Load last page on first mount
   useEffect(() => {
     const last = localStorage.getItem(LAST_PAGE_KEY) as PageKey | null;
-    if (last && last !== "home" && TILES.some(t => t.key === last)) {
+    if (last && last !== "home" && (last === "video" || TILES.some(t => t.key === last))) {
       setPage(last);
     }
   }, []);
 
-  // Persist page (don’t persist home)
   useEffect(() => {
     if (page === "home") localStorage.removeItem(LAST_PAGE_KEY);
     else localStorage.removeItem(LAST_PAGE_KEY);
-    //else localStorage.setItem(LAST_PAGE_KEY, page);
+    // If you do want to persist last page, swap the line above for:
+    // else localStorage.setItem(LAST_PAGE_KEY, page);
   }, [page]);
+
 
   return (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        display: "grid",
-        placeItems: "center",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column",   // stack YT button + main box vertically
         ...wallpaperBg,
-        //background: "radial-gradient(1200px 600px at 50% 10%, #1a1a1a 0%, #0b0b0b 70%)",
         color: ui.button,
         fontFamily: "system-ui, Arial",
         lineHeight: 1.5,
       }}
     >
+
+      {/* Main content box */}
       <div
         style={{
+          marginTop: 16, // spacing between YT button and box
           width: "min(1000px, 96vw)",
           padding: "clamp(16px, 3vw, 32px)",
           borderRadius: ui.radius,
@@ -119,12 +113,50 @@ export default function App() {
         {page === "home" ? (
           <HomeGrid onOpen={setPage} />
         ) : (
-          <DetailPage page={page} onBack={() => setPage("home")} wallpaper={wallpaper} setWallpaper={setWallpaper}/>
+          <DetailPage
+            page={page}
+            onBack={() => setPage("home")}
+            wallpaper={wallpaper}
+            setWallpaper={setWallpaper}
+          />
         )}
       </div>
+            {/* YouTube floating button */}
+      {page === "home" && (
+        <YouTubeQuickButton onClick={() => setPage("video")} />
+      )}
     </div>
+    
   );
 }
+
+/** Small, rounded YouTube button shown above the 4-tile grid */
+function YouTubeQuickButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        padding: "8px 14px",
+        borderRadius: 12,
+        background: "transparent",              // solid black background
+        border: "6px solid rgba(255, 255, 255, 0)",
+        boxShadow: "0 6px 18px rgba(255, 255, 255, 0)",
+        cursor: "pointer",
+        transition: "transform 120ms ease",
+      }}
+      onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
+      onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    >
+      <img src={ytImage} alt="YouTube" style={{ height: 38, width: 38, borderRadius: 6 }} />
+    </button>
+  );
+}
+
 
 function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
   return (
@@ -138,16 +170,16 @@ function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
       {TILES.map((t) => (
         <button
           key={t.key}
-          onClick={() => onOpen(t.key)}
+          onClick={() => onOpen(t.key as PageKey)}
           aria-label={t.title}
           style={{
             position: "relative",
             padding: 0,
             border: `1px solid ${ui.border}`,
-            borderRadius: 14,
+            borderRadius: t.key === "xrp" ? 0 : 14,   // 🔥 no rounding for XRP
             overflow: "hidden",
-            background: ui.surfaceLo,
-            aspectRatio: "1 / 1",              // perfect square
+            background: t.key === "xrp" ? "black" : ui.surfaceLo,
+            aspectRatio: "1 / 1",
             cursor: "pointer",
             transition: "transform 120ms ease, border 120ms ease, box-shadow 120ms ease",
             color: ui.button,
@@ -156,7 +188,6 @@ function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
           onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
           onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
         >
-          {/* image */}
           <img
             src={t.image}
             alt={t.title}
@@ -169,14 +200,11 @@ function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
               background: "white",
             }}
           />
-
-          {/* optional subtle gradient + focus ring */}
           <div
             style={{
               position: "absolute",
               inset: 0,
-              background:
-                "linear-gradient(180deg, rgba(0,0,0,0.0) 50%, rgba(0,0,0,0.18) 100%)",
+              background: "linear-gradient(180deg, rgba(0,0,0,0.0) 50%, rgba(0,0,0,0.18) 100%)",
             }}
           />
         </button>
@@ -188,8 +216,8 @@ function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
 function DetailPage({
   page,
   onBack,
-  wallpaper,                   // <-- add
-  setWallpaper,                // <-- add
+  wallpaper,
+  setWallpaper,
 }: {
   page: PageKey;
   onBack: () => void;
@@ -197,19 +225,12 @@ function DetailPage({
   setWallpaper: (src: string | null) => void;
 }) {
   const title =
-    TILES.find((t) => t.key === page)?.title ??
-    (page.charAt(0).toUpperCase() + page.slice(1));
+    (TILES.find((t) => t.key === page)?.title ??
+      page.charAt(0).toUpperCase() + page.slice(1)) || "";
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 16,
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
         <h2 style={{ margin: 0, fontSize: "clamp(18px, 3.2vw, 28px)" }}>{title}</h2>
       </div>
 
@@ -219,9 +240,7 @@ function DetailPage({
         </div>
       )}
 
-      {page === "xrp" && (
-        <XrpPrice onBack={onBack} />
-      )}
+      {page === "xrp" && <XrpPrice onBack={onBack} />}
       {page === "chao" && (
         <div style={{ margin: "-28px 0px 0px 0px" }}>
           <ChaoGarden3D onBack={onBack} />
