@@ -137,7 +137,14 @@ export default function App() {
       </div>
             {/* YouTube floating button */}
       {page === "home" && (
-        <YouTubeQuickButton onClick={() => setPage("video")} />
+        <div style={{ display: "flex", gap: 10, marginTop: 0 }}>
+          <YouTubeQuickButton onClick={() => setPage("video")} />
+          <MessageQuickButton onClick={() => {
+            // TODO: wire up your messaging action here
+            // e.g., open a modal or call your /join + /broadcast endpoints
+            console.log("Message button clicked");
+          }} />
+        </div>
       )}
     </div>
     
@@ -171,6 +178,33 @@ function YouTubeQuickButton({ onClick }: { onClick: () => void }) {
   );
 }
 
+function MessageQuickButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Message"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        padding: "8px 14px",
+        borderRadius: 12,
+        background: "transparent",
+        border: "6px solid rgba(255, 255, 255, 0)",
+        boxShadow: "0 6px 18px rgba(255, 255, 255, 0)",
+        cursor: "pointer",
+        transition: "transform 120ms ease",
+      }}
+      onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
+      onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+    >
+      {/* uses emoji so no new assets needed */}
+      <span style={{ fontSize: 26, lineHeight: 1 }}>💬</span>
+    </button>
+  );
+}
 
 function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
   return (

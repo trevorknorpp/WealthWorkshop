@@ -40,7 +40,7 @@ type ClusterClient = {
 // Load proto package (dynamic) and keep "any" at the very edge.
 // We reintroduce strong typing via ClusterClient above.
 // -----------------------------------------------------------------------------
-const PROTO_PATH = path.join(__dirname, "..", "protos", "cluster.proto");
+const PROTO_PATH = path.join(__dirname, "..", "..", "server", "protos", "cluster.proto");
 const packageDef = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
   longs: String,
@@ -77,14 +77,9 @@ export class ClusterNode {
   private clients = new Map<string, ClusterClient>(); // id -> gRPC client
 
   // NOTE: Avoid TS parameter properties (not allowed in erasableSyntaxOnly).
-  private host: string;
-  private port: number;
 
   // Regular constructor: assign fields explicitly.
   constructor(host: string, port: number) {
-    this.host = host;
-    this.port = port;
-
     this.id = uuidv4();
     this.address = `${host}:${port}`;
     this.server = new grpc.Server();

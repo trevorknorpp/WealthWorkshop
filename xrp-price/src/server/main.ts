@@ -1,4 +1,4 @@
-import { ClusterNode } from "./clusterServer";
+import { ClusterNode } from "../server/clusterServer";
 
 const HOST = process.env.HOST ?? "127.0.0.1";
 const PORT = parseInt(process.env.PORT ?? "50051", 10);

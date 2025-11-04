@@ -1,6 +1,5 @@
 // ---- HistoryChart.tsx (or inline above your component) ----
 import { useEffect, useMemo, useRef, useState } from "react";
-import { specularF90 } from "three/tsl";
 
 type RangeKey = "1D" | "7D" | "30D" | "90D" | "1Y";
 const RANGE_TO_DAYS: Record<RangeKey, number> = {

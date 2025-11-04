@@ -1,9 +1,8 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, Html, PointerLockControls, KeyboardControls, Sky, Environment, ContactShadows} from "@react-three/drei";
-import { useCallback, useRef, useState, useLayoutEffect, useEffect} from "react";
+import { useRef, useState, useLayoutEffect, useEffect} from "react";
 import { BoundaryControl, WASDMover, VerticalMover, CursorHoldUnlock} from "./ChaoGarden/SonicController"
 import * as THREE from "three";
-import { EffectComposer, Bloom, SSAO, Vignette } from "@react-three/postprocessing";
 
 function LoadChaoGarden() {
   const { scene } = useGLTF("/chaoGarden.glb");
