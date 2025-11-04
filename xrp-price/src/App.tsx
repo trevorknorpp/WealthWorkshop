@@ -14,6 +14,8 @@ import wp1 from "./assets/wallpapers/wp1.jpg";
 import wp2 from "./assets/wallpapers/wp2.jpg";
 import wp3 from "./assets/wallpapers/wp3.jpg";
 import PhotoEditor from "./PhotoEditor";
+import MessagePage from "./messagePage";
+
 
 const WALLPAPERS: string[] = [wp1, wp2, wp3];
 const WALLPAPER_KEY = "wallpaper_v1";
@@ -30,7 +32,7 @@ const ui = {
   button: "rgba(82, 69, 69, 1)",
 };
 
-type PageKey = "home" | "xrp" | "chao" | "paint" | "settings" | "video";
+type PageKey = "home" | "xrp" | "chao" | "paint" | "settings" | "video" | "message";
 const LAST_PAGE_KEY = "last_page_v1";
 
 type Tile = { key: Exclude<PageKey, "home" | "video">; title: string; image?: string };
@@ -139,11 +141,7 @@ export default function App() {
       {page === "home" && (
         <div style={{ display: "flex", gap: 10, marginTop: 0 }}>
           <YouTubeQuickButton onClick={() => setPage("video")} />
-          <MessageQuickButton onClick={() => {
-            // TODO: wire up your messaging action here
-            // e.g., open a modal or call your /join + /broadcast endpoints
-            console.log("Message button clicked");
-          }} />
+          <MessageQuickButton onClick={() => setPage("message")} />         
         </div>
       )}
     </div>
@@ -196,11 +194,10 @@ function MessageQuickButton({ onClick }: { onClick: () => void }) {
         cursor: "pointer",
         transition: "transform 120ms ease",
       }}
-      onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
-      onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-      onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      onMouseDown={e => (e.currentTarget.style.transform = "scale(0.96)")}
+      onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+      onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
     >
-      {/* uses emoji so no new assets needed */}
       <span style={{ fontSize: 26, lineHeight: 1 }}>💬</span>
     </button>
   );
@@ -300,6 +297,12 @@ function DetailPage({
           onBack={onBack}
         />
       )}
+      {page === "message" && (
+        <div style={{ padding: 16 }}>
+          <MessagePage onBack={onBack} />
+        </div>
+      )}
+
     </div>
   );
 }
