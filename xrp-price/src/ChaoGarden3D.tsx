@@ -1,6 +1,6 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useGLTF, Html, PointerLockControls, KeyboardControls, Sky, Environment, ContactShadows} from "@react-three/drei";
-import { useCallback, useRef, useState, useLayoutEffect} from "react";
+import { useCallback, useRef, useState, useLayoutEffect, useEffect} from "react";
 import { BoundaryControl, WASDMover, VerticalMover, CursorHoldUnlock} from "./ChaoGarden/SonicController"
 import * as THREE from "three";
 import { EffectComposer, Bloom, SSAO, Vignette } from "@react-three/postprocessing";
@@ -44,33 +44,35 @@ function LoadChaoGarden() {
 
   return <primitive object={scene} scale={2} />;
 }
-/** A 3D "screen" with a live YouTube player (iframe projected into 3D). */
+
 function YouTubeBillboard({
   videoId = "lcxNwdZlQT8",
-  size = [1.6, 0.9] as [number, number],          // meters (16:9)
+  // desired size in meters (keep 16:9 ratio)
+  size = [1.6, 0.9] as [number, number],
   position = [0, 1.1, -2] as [number, number, number],
   rotation = [0, 0, 0] as [number, number, number],
 }) {
-  const [w, h] = size;
+  // Base “design size” the pixels were authored against
+  const BASE: [number, number] = [1.6, 0.9]; // meters that correspond to 1280×720
+  const scaleX = size[0] / BASE[0];
+  const scaleY = size[1] / BASE[1];
 
-  // pick any 16:9 pixel size; 1280x720 keeps YouTube happy
+  // Keep the iframe at a nice crisp pixel size;
+  // this does NOT control world-space size anymore — the group’s scale does.
   const pxWidth = 1280;
   const pxHeight = 720;
 
-  // This makes the DOM element appear exactly w meters wide in world space
-  const distanceFactor = w / (pxWidth / 100);
-
   return (
-    <group position={position} rotation={rotation}>
-      {/* 🔴 NO MESH HERE — remove the black plane completely */}
-
+    <group position={position} rotation={rotation} scale={[scaleX, scaleY, 1]}>
+      {/* No mesh behind it; the Html is the visible surface */}
       <Html
         transform
-        position={[0, 0, 0.001]}       // a hair in front of any geometry
-        distanceFactor={distanceFactor}
+        // distanceFactor can be 1 or omitted when you're scaling via the parent
+        distanceFactor={1}
+        position={[0, 0, 0.001]}    // a hair off the surface to avoid z-fighting
         pointerEvents="auto"
+        occlude={false}
         zIndexRange={[200, 100]}
-        occlude={false}                 // don’t let geometry hide it
       >
         <div
           style={{
@@ -78,7 +80,7 @@ function YouTubeBillboard({
             height: pxHeight,
             borderRadius: 12,
             overflow: "hidden",
-            background: "transparent",  // transparent container
+            background: "transparent",
             border: "none",
             boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
           }}
@@ -99,45 +101,28 @@ function YouTubeBillboard({
 }
 
 
-function CameraHUD({ enabled }: { enabled: boolean }) {
-  const { camera } = useThree(); 
-  const [text, setText] = useState("");
+function SetCameraLookAt() {
+  const { camera } = useThree();
 
-  useFrame(() => {
-    if (!enabled) return; // ✅ do nothing if disabled
-    const p = camera.position;
-    setText(`x: ${p.x.toFixed(2)}  y: ${p.y.toFixed(2)}  z: ${p.z.toFixed(2)}`);
-  });
+  useEffect(() => {
+    camera.lookAt(-10,4,8); // 👈 look at world position (x,y,z)
+  }, [camera]);
 
-  return enabled ? (
-    <Html
-      // ✅ render into overlay instead of scene
-      portal={{ current: document.body }}
-      zIndexRange={[100, 0]}
-    >
-      <div
-        style={{
-          position: "absolute",
-          top: 10,
-          right: 10, // 👈 pinned top-right of canvas
-          background: "rgba(0,0,0,0.6)",
-          color: "#fff",
-          fontFamily: "monospace",
-          padding: "6px 10px",
-          borderRadius: 6,
-          fontSize: 12,
-        }}
-      >
-        {text}
-      </div>
-    </Html>
-  ) : null;
+  return null;
 }
 
+function CameraReporter({ onUpdate }: { onUpdate: (p: [number, number, number]) => void }) {
+  const { camera } = useThree();
+  useFrame(() => {
+    onUpdate([camera.position.x, camera.position.y, camera.position.z]);
+  });
+  return null; // nothing visual in the scene
+}
 
 export default function ChaoGarden3D({ onBack }: { onBack?: () => void }) {
   
-const [devMode, setDevMode] = useState(true); //useState false for normally off
+const [devMode, setDevMode] = useState(false); //useState false for normally off
+const [cam, setCam] = useState<[number, number, number]>([0, 0, 0]); // 👈 add this
 const plcRef = useRef<any>(null); // 👈 pointer-lock controls ref
 
   return (
@@ -168,15 +153,22 @@ const plcRef = useRef<any>(null); // 👈 pointer-lock controls ref
         />
         Show camera position
       </label>
+
+        {/* 👇 static text in normal DOM */}
+        {devMode && (
+          <code style={{ marginLeft: "auto", color: "#ddd", fontFamily: "monospace" }}>
+            x: {cam[0].toFixed(2)}&nbsp; y: {cam[1].toFixed(2)}&nbsp; z: {cam[2].toFixed(2)}
+          </code>
+        )}
       </div>
 
-     {/* the canvas is the root container that sets up the WebGL rending context*/}
-     {/* without Canvas, nothing 2D will appear */}
+      {/* the canvas is the root container that sets up the WebGL rending context*/}
+      {/* without Canvas, nothing 2D will appear */}
       
       <Canvas
         shadows
         dpr={[1, 2]}
-        camera={{ position: [0, 1.35, 6], fov: 50 }}
+        camera={{ position: [3.5, 1.5, -6], fov: 50 }}
         gl={{
           antialias: true,
           outputColorSpace: THREE.SRGBColorSpace,
@@ -217,18 +209,20 @@ const plcRef = useRef<any>(null); // 👈 pointer-lock controls ref
         {/*youtube player in map*/}
         <YouTubeBillboard
           videoId="lcxNwdZlQT8"
-          position={[-3,5,8]}
-          rotation={[0, Math.PI * 0.1, 0]}
+          position={[-10,4,8]}
+          rotation={[0, 15, 0]}
           size={[3.2, 1.8]}
         />
 
         {/*youtube player in map*/}
         <YouTubeSphere
           videoId="lcxNwdZlQT8"
-          position={[-5,8,8]}
-          radius={3.2}
+          position={[0,6,8]}
+          radius={3}
         />
 
+        <SetCameraLookAt />
+        <CameraReporter onUpdate={setCam} />
 
         {/* controls */}
         <KeyboardControls
@@ -251,9 +245,6 @@ const plcRef = useRef<any>(null); // 👈 pointer-lock controls ref
           <BoundaryControl/>
         </KeyboardControls>
         
-        {/* must be in canvas to access camera position in 3D rendering*/}
-        <CameraHUD enabled={devMode} />
-
       </Canvas>
     </div>
   );

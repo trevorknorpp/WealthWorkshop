@@ -80,7 +80,6 @@ export default function App() {
     // else localStorage.setItem(LAST_PAGE_KEY, page);
   }, [page]);
 
-  const isXrp = page === "xrp";  // ✅ only shrink/tint for XRP
 
   return (
     <div
