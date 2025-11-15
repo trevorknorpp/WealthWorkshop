@@ -185,6 +185,7 @@ export default function ChaoGarden3D({ onBack }: { onBack?: () => void }) {
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button
           onClick={addPortal}
+          onMouseUp={(e) => e.currentTarget.blur()}
           style={{
             padding: "6px 12px",
             borderRadius: "6px",
@@ -192,7 +193,8 @@ export default function ChaoGarden3D({ onBack }: { onBack?: () => void }) {
             background: "rgba(0,128,255,0.2)",
             color: "white",
             cursor: "pointer",
-            fontSize: "12px"
+            fontSize: "12px",
+            outline: "none"
           }}
         >
           + Add Portal ({portals.length})

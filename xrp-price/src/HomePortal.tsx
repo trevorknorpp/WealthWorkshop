@@ -74,26 +74,25 @@ export default function HomePortal({
         {/* Header with close button */}
         <div style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "center",
-          padding: "12px 16px",
+          padding: "8px 12px",
           background: "rgba(0,0,0,0.7)",
           borderBottom: "1px solid rgba(255,255,255,0.1)"
         }}>
-          <h3 style={{ margin: 0, color: "white" }}>Portal Instance</h3>
           <button
             onClick={onClose}
             style={{
-              padding: "6px 12px",
-              borderRadius: "6px",
+              padding: "4px 8px",
+              borderRadius: "4px",
               border: "1px solid rgba(255,255,255,0.3)",
               background: "rgba(255,255,255,0.1)",
               color: "white",
               cursor: "pointer",
-              fontSize: "12px"
+              fontSize: "10px"
             }}
           >
-            ✕ Close
+            ✕
           </button>
         </div>
 
@@ -132,72 +131,57 @@ function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
   return (
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-        gap: 12,
+        display: "flex",
+        flexDirection: "column",
+        gap: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%"
       }}
     >
-      {TILES.map((t) => (
-        <button
-          key={t.key}
-          onClick={() => onOpen(t.key as PageKey)}
-          aria-label={t.title}
-          style={{
-            position: "relative",
-            padding: 0,
-            border: `1px solid ${ui.border}`,
-            borderRadius: t.key === "xrp" ? 0 : 10,
-            overflow: "hidden",
-            background: t.key === "xrp" ? "black" : ui.surfaceLo,
-            aspectRatio: "1 / 1",
-            cursor: "pointer",
-            transition: "transform 120ms ease, border 120ms ease, box-shadow 120ms ease",
-            color: ui.button,
-          }}
-          onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
-          onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-        >
-          <img
-            src={t.image}
-            alt={t.title}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-              filter: t.key === "xrp" ? "none" : "saturate(0.9)",
-              background: "white",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(180deg, rgba(0,0,0,0.0) 50%, rgba(0,0,0,0.18) 100%)",
-            }}
-          />
-        </button>
-      ))}
-
-      {/* YouTube button */}
+      {/* Paint button - BIG */}
       <button
-        onClick={() => onOpen("video")}
+        onClick={() => onOpen("paint")}
         style={{
+          width: "120px",
+          height: "120px",
+          border: `2px solid ${ui.border}`,
+          borderRadius: 15,
+          overflow: "hidden",
+          background: ui.surfaceLo,
+          cursor: "pointer",
+          transition: "transform 120ms ease, border 120ms ease, box-shadow 120ms ease",
+          color: ui.button,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: 8,
-          padding: "8px",
-          borderRadius: 10,
-          background: "rgba(255,255,255,0.1)",
-          border: "1px solid rgba(255,255,255,0.2)",
+          fontSize: "48px"
+        }}
+        onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.95)")}
+        onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        🎨
+      </button>
+
+      {/* YouTube button - BIG */}
+      <button
+        onClick={() => onOpen("video")}
+        style={{
+          width: "120px",
+          height: "120px",
+          borderRadius: 15,
+          background: "rgba(255,0,0,0.8)",
+          border: "2px solid rgba(255,255,255,0.3)",
           cursor: "pointer",
           transition: "transform 120ms ease",
           color: "white",
-          fontSize: "24px"
+          fontSize: "48px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
         }}
-        onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
+        onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.95)")}
         onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
       >
