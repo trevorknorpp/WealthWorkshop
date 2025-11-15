@@ -4,6 +4,13 @@ import { useRef, useState, useLayoutEffect, useEffect} from "react";
 import { BoundaryControl, WASDMover, VerticalMover, CursorHoldUnlock} from "./ChaoGarden/SonicController"
 import * as THREE from "three";
 
+// Import components for the home page instances
+import XrpPrice from "./XrpPrice";
+import WallpaperPicker from "./WallpaperPicker";
+import VideoPlayer from "./VideoPlayer";
+import PhotoEditor from "./PhotoEditor";
+import HomePortal from "./HomePortal";
+
 function LoadChaoGarden() {
   const { scene } = useGLTF("/chaoGarden.glb");
 
@@ -119,10 +126,31 @@ function CameraReporter({ onUpdate }: { onUpdate: (p: [number, number, number]) 
 }
 
 export default function ChaoGarden3D({ onBack }: { onBack?: () => void }) {
-  
-const [devMode, setDevMode] = useState(false); //useState false for normally off
-const [cam, setCam] = useState<[number, number, number]>([0, 0, 0]); // 👈 add this
-const plcRef = useRef<any>(null); // 👈 pointer-lock controls ref
+
+ const [devMode, setDevMode] = useState(false); //useState false for normally off
+ const [cam, setCam] = useState<[number, number, number]>([0, 0, 0]); // 👈 add this
+ const plcRef = useRef<any>(null); // 👈 pointer-lock controls ref
+ const [portals, setPortals] = useState<{ id: string; position: [number, number, number] }[]>([]); // Portal instances
+ const [portalCount, setPortalCount] = useState(0); // Counter for unique portal IDs
+
+ // Function to add a new portal at a random position
+ const addPortal = () => {
+   const newId = `portal-${portalCount}`;
+   const angle = Math.random() * Math.PI * 2;
+   const distance = 4 + Math.random() * 6;
+   const x = Math.cos(angle) * distance;
+   const z = Math.sin(angle) * distance;
+   const position: [number, number, number] = [x, 1.5, z];
+
+   setPortals(prev => [...prev, { id: newId, position }]);
+   setPortalCount(prev => prev + 1);
+ };
+
+ // Function to close a portal
+ const closePortal = (id: string) => {
+   setPortals(prev => prev.filter(p => p.id !== id));
+ };
+
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "70vh" }}>
@@ -152,6 +180,24 @@ const plcRef = useRef<any>(null); // 👈 pointer-lock controls ref
         />
         Show camera position
       </label>
+
+      {/* Portal controls */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <button
+          onClick={addPortal}
+          style={{
+            padding: "6px 12px",
+            borderRadius: "6px",
+            border: "1px solid rgba(255,255,255,0.3)",
+            background: "rgba(0,128,255,0.2)",
+            color: "white",
+            cursor: "pointer",
+            fontSize: "12px"
+          }}
+        >
+          + Add Portal ({portals.length})
+        </button>
+      </div>
 
         {/* 👇 static text in normal DOM */}
         {devMode && (
@@ -222,6 +268,24 @@ const plcRef = useRef<any>(null); // 👈 pointer-lock controls ref
 
         <SetCameraLookAt />
         <CameraReporter onUpdate={setCam} />
+
+        {/* Portal objects in the scene */}
+        {portals.map((portal) => (
+          <PortalObject
+            key={portal.id}
+            position={portal.position}
+            onClick={() => {}} // Portal is just visual, the HomePortal handles interaction
+          />
+        ))}
+
+        {/* Home Portal instances */}
+        {portals.map((portal) => (
+          <HomePortal
+            key={`home-${portal.id}`}
+            position={portal.position}
+            onClose={() => closePortal(portal.id)}
+          />
+        ))}
 
         {/* controls */}
         <KeyboardControls
@@ -294,6 +358,59 @@ function YouTubeSphere({
             allowFullScreen
             style={{ display: "block", border: 0, background: "transparent" }}
           />
+        </div>
+      </Html>
+    </group>
+  );
+}
+
+function PortalObject({
+  position = [0, 1.5, 0] as [number, number, number],
+  onClick
+}: {
+  position?: [number, number, number];
+  onClick: () => void;
+}) {
+  return (
+    <group position={position}>
+      {/* Glowing portal ring */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.5, 2, 32]} />
+        <meshBasicMaterial
+          color="#4a90ff"
+          transparent
+          opacity={0.8}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Inner portal effect */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[1.4, 32]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.3}
+        />
+      </mesh>
+
+      {/* Portal label */}
+      <Html
+        position={[0, 0.5, 0]}
+        center
+        distanceFactor={3}
+        occlude={false}
+        zIndexRange={[50, 0]}
+      >
+        <div style={{
+          color: "white",
+          fontSize: "14px",
+          fontWeight: "bold",
+          textShadow: "0 0 8px rgba(74, 144, 255, 0.8)",
+          textAlign: "center",
+          pointerEvents: "none"
+        }}>
+          🌀 Portal
         </div>
       </Html>
     </group>
