@@ -1,19 +1,23 @@
-// App.tsx
 import { useEffect, useState, type CSSProperties } from "react";
+
+//pull in views for buttons
 import XrpPrice from "./XrpPrice";
 import ChaoGarden3D from "./ChaoGarden3D";
+import WallpaperPicker from "./WallpaperPicker";
+import VideoPlayer from "./VideoPlayer";
+import PhotoEditor from "./PhotoEditor";
+
+// pull in assets
 import xrpImg from "./assets/xrp.png";
 import sa2Img from "./assets/sa2.png";
 import paintImg from "./assets/paint.png";
 import wallpaperImage from "./assets/wallpaperImage.png";
 import ytImage from "./assets/yt.png";
-
-import WallpaperPicker from "./WallpaperPicker";
-import VideoPlayer from "./VideoPlayer";
 import wp1 from "./assets/wallpapers/wp1.jpg";
 import wp2 from "./assets/wallpapers/wp2.jpg";
 import wp3 from "./assets/wallpapers/wp3.jpg";
-import PhotoEditor from "./PhotoEditor";
+
+
 
 
 const WALLPAPERS: string[] = [wp1, wp2, wp3];
@@ -31,12 +35,13 @@ const ui = {
   button: "rgba(82, 69, 69, 1)",
 };
 
+//different pages to navigate to
 type PageKey = "home" | "xrp" | "chao" | "paint" | "settings" | "video";
 const LAST_PAGE_KEY = "last_page_v1";
 
 type Tile = { key: Exclude<PageKey, "home" | "video">; title: string; image?: string };
 
-// ⬇️ YouTube removed from the grid
+//large image tiles
 const TILES: Tile[] = [
   { key: "xrp", title: "", image: xrpImg },
   { key: "chao", title: "", image: sa2Img },
@@ -44,17 +49,26 @@ const TILES: Tile[] = [
   { key: "settings", title: "", image: wallpaperImage },
 ];
 
+//start here
 export default function App() {
+
+  //by default set page to home
+  //changing page re-renders the UI to show selections
   const [page, setPage] = useState<PageKey>("home");
+
+  //set wallpaper to stored setting or null (black background)
   const [wallpaper, setWallpaper] = useState<string | null>(() =>
     localStorage.getItem(WALLPAPER_KEY)
   );
 
   useEffect(() => {
+    //when wallpaper changes, save it to local storage
     if (wallpaper) localStorage.setItem(WALLPAPER_KEY, wallpaper);
+    //remove wallpaper when cleared
     else localStorage.removeItem(WALLPAPER_KEY);
   }, [wallpaper]);
 
+  //set background CSS for the whole app
   const wallpaperBg: CSSProperties = wallpaper
     ? {
         backgroundImage: `linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,.55)), url(${wallpaper})`,
@@ -63,10 +77,13 @@ export default function App() {
         backgroundRepeat: "no-repeat",
         backgroundAttachment: "fixed",
       }
-    : {
+    : //no wallpaper, default black
+      {
         background: "radial-gradient(1200px 600px at 50% 10%, #1a1a1a 0%, #0b0b0b 70%)",
       };
 
+  
+  //restore last page if valid, so we don't always go home
   useEffect(() => {
     const last = localStorage.getItem(LAST_PAGE_KEY) as PageKey | null;
     if (last && last !== "home" && (last === "video" || TILES.some(t => t.key === last))) {
@@ -74,11 +91,10 @@ export default function App() {
     }
   }, []);
 
+  //invalidate last page key if page is home
   useEffect(() => {
     if (page === "home") localStorage.removeItem(LAST_PAGE_KEY);
     else localStorage.removeItem(LAST_PAGE_KEY);
-    // If you do want to persist last page, swap the line above for:
-    // else localStorage.setItem(LAST_PAGE_KEY, page);
   }, [page]);
 
 
@@ -98,7 +114,7 @@ export default function App() {
       }}
     >
 
-      {/* Main content box */}
+      {/* ,ain content box */}
       <div
         style={{
           marginTop: 16,
@@ -109,9 +125,9 @@ export default function App() {
 
           borderRadius: ui.radius,
 
-          // ✅ key difference: xrp uses translucent + blur, others stay solid
+          // xrp uses translucent + blur, others stay solid
           background: page === "xrp"
-            ? "rgba(8,10,14,0.36)"   // see-through glass for XRP only
+            ? "rgba(8,10,14,0.36)"   
             : ui.surface,
 
           border: page === "xrp" ? "none" : `1px solid ${ui.border}`,
@@ -128,6 +144,7 @@ export default function App() {
         {page === "home" ? (
           <HomeGrid onOpen={setPage} />
         ) : (
+          //switches windows based on page element
           <DetailPage
             page={page}
             onBack={() => setPage("home")}
@@ -136,7 +153,6 @@ export default function App() {
           />
         )}
       </div>
-            {/* YouTube floating button */}
       {page === "home" && (
         <div style={{ display: "flex", gap: 10, marginTop: 0 }}>
           <YouTubeQuickButton onClick={() => setPage("video")} />
@@ -147,7 +163,7 @@ export default function App() {
   );
 }
 
-/** Small, rounded YouTube button shown above the 4-tile grid */
+//small youtube button
 function YouTubeQuickButton({ onClick }: { onClick: () => void }) {
   return (
     <button
@@ -174,7 +190,7 @@ function YouTubeQuickButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-
+//main 4 icons as grid of tiles that - scale when you hover on them with the mouse
 function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
   return (
     <div
@@ -230,6 +246,7 @@ function HomeGrid({ onOpen }: { onOpen: (p: PageKey) => void }) {
   );
 }
 
+//switches content view based on current page
 function DetailPage({
   page,
   onBack,
